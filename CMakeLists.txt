@@ -22,6 +22,7 @@ FetchContent_MakeAvailable(raylib)
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
 
+target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_subdirectory(include/glm)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
