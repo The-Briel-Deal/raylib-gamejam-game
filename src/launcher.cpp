@@ -1,4 +1,5 @@
 #include "engine/rendering/render_system.h"
+#include <flecs.h>
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
