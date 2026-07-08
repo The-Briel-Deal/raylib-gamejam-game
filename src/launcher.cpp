@@ -1,4 +1,8 @@
 #include "engine/rendering/render_system.h"
+#include "engine/states/game_state_controller.h"
+#include "engine/current_game_info.h"
+
+
 #include <flecs.h>
 
 #if defined(PLATFORM_WEB)
@@ -12,15 +16,25 @@
     #define LOG(...)
 #endif
 
-static RenderSystem* renderSystemInstance;
+static CurrentGameInfo* gameInfo{};
 
 void MainLoop() {
-    renderSystemInstance->DrawFrame();
+    gameInfo->renderSystem->BeginFrame();
+    gameInfo->frameCounter = gameInfo->renderSystem->frameCounter;
+    gameInfo->gameStateController->OnUpdate(*gameInfo);
+    gameInfo->gameStateController->OnRender(*gameInfo);
+    gameInfo->renderSystem->EndFrame();
 }
 
 int main(void) {
+
+    CurrentGameInfo info{};
     auto renderSystem = RenderSystem();
-    renderSystemInstance = &renderSystem;
+    info.renderSystem = &renderSystem;
+    
+    auto stateController = GameStateController(info);
+
+    gameInfo = &info;
 
     #if defined(PLATFORM_WEB)
         emscripten_set_main_loop(MainLoop, 60, 1);
