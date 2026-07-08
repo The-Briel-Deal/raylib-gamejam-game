@@ -33,6 +33,14 @@ f32vec3 U32ToVec(u32 u) {
     return vec;
 }
 
+f32vec3 ColorToVec(Color u) {
+    auto vec = f32vec3{};
+    vec.r = (float)(u.r) / 255.0f;
+    vec.g = (float)(u.g) / 255.0f;
+    vec.b = (float)(u.b) / 255.0f;
+    return vec;
+}
+
 namespace {
     constexpr i32 UNPAUSE_DELAY_FRAMES = 2;
     constexpr i32 POST_UNPAUSE_HIDDEN_FRAMES = 2;
@@ -337,6 +345,14 @@ void InGameState::OnLoad(CurrentGameInfo& info) {
     playerComp.pos.x = (float)game.level.width / 2.0f;
     playerComp.pos.z = (float)game.level.length / 2.0f;
     info.flecs->entity("Player").set<EntityComponent>(playerComp).set<PlayerComponent>(PlayerComponent{});
+
+    auto testComp = EntityComponent{};
+    testComp.pos = playerComp.pos;
+
+    info.flecs->entity("Test").set<EntityComponent>(testComp).set<VisibleEntityComponent>(VisibleEntityComponent{
+        .texture = LoadTexture("resources/apple.png"),
+        .has_texture = true
+    });
 }
 
 void InGameState::OnUpdate(CurrentGameInfo& info) {
@@ -534,8 +550,87 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
     });
 }
 
+bool ProjectEntityRect(
+    const EntityComponent& entity,
+    const Game& game,
+    Rectangle& out_rect
+) {
+    constexpr float screen_w = 720.0f;
+    constexpr float screen_h = 720.0f;
+    constexpr float fov = 90.0f;
+
+    float fov_rad = glm::radians(fov);
+    float half_width = tanf(fov_rad * 0.5f);
+    float projection_scale = (screen_h * 0.5f) / tanf(glm::radians(90.0f) * 0.5f);
+
+    float yaw = glm::radians(game.yaw);
+    vec2 forward_world(sinf(yaw), cosf(yaw));
+    vec2 right_world(forward_world.y, -forward_world.x);
+
+    vec2 cam_world = HexAxialToWorld(game.camera.x, game.camera.z);
+    vec2 ent_world = HexAxialToWorld(entity.pos.x, entity.pos.z);
+    vec2 rel = ent_world - cam_world;
+
+    float depth = dot(rel, forward_world);
+    if (depth <= 0.01f) return false;
+
+    float side = dot(rel, right_world);
+    float camera_x = side / depth;
+
+    if (fabsf(camera_x) > half_width) return false;
+
+    float screen_x = ((camera_x / half_width) * 0.5f + 0.5f) * screen_w;
+
+    float screen_center_y = 360.0f + game.pitch * 10.0f;
+
+    auto project_y = [&](float world_y) {
+        return screen_center_y - ((world_y - game.camera.y) / depth) * projection_scale;
+    };
+
+    float y_top = project_y(entity.pos.y + entity.height);
+    float y_bottom = project_y(entity.pos.y);
+
+    float half_rect_width = (entity.radius / depth) * projection_scale;
+
+    out_rect = Rectangle{
+        screen_x - half_rect_width,
+        y_top,
+        half_rect_width * 2.0f,
+        y_bottom - y_top
+    };
+
+    return out_rect.width > 0.0f && out_rect.height > 0.0f;
+}
+
 void InGameState::OnRender(CurrentGameInfo& info) {
     auto& level = game.level;
+
+    game.entity_buckets.clear();
+
+    info.flecs->each([&](flecs::entity entity, EntityComponent& comp) {
+        
+        auto e_cell = HexRound(comp.pos.x, comp.pos.z);
+        int key = e_cell.q + e_cell.r * (int)game.level.width;
+        auto find = game.entity_buckets.find(key);
+        if (find == game.entity_buckets.end()) {
+            game.entity_buckets[key] = {};
+        }
+        game.entity_buckets[key].push_back(EntityVisibilityCheck{
+            .entity = entity,
+            .visible = false
+        });
+    });
+
+    info.flecs->each([&](VisibleEntityComponent& comp, EntityComponent& entity) {
+        comp.visible = false;
+        Rectangle rect{};
+        if (ProjectEntityRect(entity, game, rect)) {
+            comp.clip_x0 = rect.x;
+            comp.clip_y0 = rect.y;
+            comp.clip_x1 = rect.x + rect.width;
+            comp.clip_y1 = rect.y + rect.height;
+        }
+    });
 
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
@@ -574,7 +669,7 @@ void InGameState::OnRender(CurrentGameInfo& info) {
     const f32vec3 sun_dir = normalize(f32vec3(1, 1, 1));
     const bool use_nausea = game.nausea != 0.0f;
     const f32 nausea_time = game.time * 0.05f;
-
+    
     for (int i = 0; i < screen_w; i++) {
         f32 screen_x = ((i + 0.5f) / screen_w_f) * 2.0f - 1.0f;
         f32 camera_x = screen_x * half_width;
@@ -631,6 +726,39 @@ void InGameState::OnRender(CurrentGameInfo& info) {
                 continue;
             }
 
+            
+
+            auto find = game.entity_buckets.find(map_x + map_z * (int)game.level.width);
+            if (find != game.entity_buckets.end()) {
+                auto& vec = find->second;
+                for (auto& check : vec) {
+                    check.visible = true;
+                    
+                    if (check.entity.has<VisibleEntityComponent>()) {
+                        auto& comp = check.entity.get_mut<VisibleEntityComponent>();
+
+                        Rectangle rect{};
+                        if (ProjectEntityRect(check.entity.get<EntityComponent>(), game, rect)) {
+                            if (rect.y <= y_top) {
+                                check.visible = true;
+                                comp.visible = true;
+                            } else {
+                                if (i > comp.clip_x0 && i < rect.x + rect.width / 2) {
+                                    comp.clip_x0 = i;
+                                }
+                                if (i < comp.clip_x1 && i > rect.x + rect.width / 2) {
+                                    comp.clip_x1 = i;
+                                }
+                            }
+                            if (y_top < comp.clip_y1) {
+                                //comp.clip_y1 = y_top;
+                            }
+                        }
+                    }
+                    
+                }
+            }
+
             f32 world_height = level.At(map_x, map_z);
             prev_height = world_height;
 
@@ -644,6 +772,8 @@ void InGameState::OnRender(CurrentGameInfo& info) {
 
             f32 dist_norm = std::clamp(cell_enter * inv_view_dist, 0.0f, 1.0f);
             hit_color = mix(hit_color, sky_color, dist_norm);
+
+
 
             if (world_height > old_height) {
                 f32 enter_depth = CameraDepthFromHexT(cell_enter);
@@ -701,6 +831,43 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             }
         }
     }
+
+    info.flecs->each([&](VisibleEntityComponent& visible, EntityComponent& entity) {
+        if (visible.visible) {
+            int nausea_offset = 0;
+            if (use_nausea) {
+                //nausea_offset = (int)(game.nausea * glm::sin((float)i * 0.01f + nausea_time) * 15.0f);
+            }
+
+            auto ProjectY = [&](f32 world_y, f32 d) -> int {
+                f32 safe_d = std::max(d, 0.001f);
+                f32 projected =
+                    screen_center_y -
+                    ((world_y - game.camera.y) / safe_d) * projection_scale;
+
+                return (int)projected + nausea_offset;
+            };
+
+            
+
+            Rectangle rect{};
+            if (ProjectEntityRect(entity, game, rect)) {
+                rect = {visible.clip_x0, visible.clip_y0, (visible.clip_x1 - visible.clip_x0), (visible.clip_y1 - visible.clip_y0)};
+                auto dist = distance(entity.pos, f32vec3(game.camera.x, game.camera.y, game.camera.z));
+
+                auto dist_norm = clamp(dist / (float)view_dist, 0.0f, 1.0f);
+
+                auto color_vec = mix(visible.color, sky_color, dist_norm);
+
+                if (visible.has_texture) {
+                    DrawTexturePro(visible.texture, {0, 0, (float)visible.texture.width, (float)visible.texture.height}, rect, {}, 0, VecToColor(color_vec));
+                } else {
+                    DrawRectangleRec(rect, VecToColor(color_vec));
+                }
+                
+            }
+        }
+    });
 
     if (game.paused) {
         auto mousePos = GetMousePosition();
