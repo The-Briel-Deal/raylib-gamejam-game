@@ -5,6 +5,8 @@
 #include <vector>
 #include <raylib.h>
 #include "../../../utils/math_helpers.h"
+#include <unordered_map>
+#include <flecs.h>
 
 using namespace glm;
 
@@ -105,6 +107,22 @@ struct PlayerComponent {
     bool placeholder = false;
 };
 
+struct VisibleEntityComponent {
+    f32vec3 color{1, 1, 1};
+    bool visible;
+    f32 clip_x0;
+    f32 clip_x1;
+    f32 clip_y0;
+    f32 clip_y1;
+    Texture2D texture{};
+    bool has_texture = false;
+};
+
+struct EntityVisibilityCheck {
+    flecs::entity entity;
+    bool visible;
+};
+
 struct Game {
     GameCamera camera{};
     f32 pitch = 0.0f;
@@ -112,6 +130,8 @@ struct Game {
     f32 gravity = -0.25f;
     f32 time = 0.0f;
     f32 nausea = 0.0f;
+
+    std::unordered_map<i32, std::vector<EntityVisibilityCheck>> entity_buckets;
 
     bool paused = false;
     bool pause_cursor_released = false;
