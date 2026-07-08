@@ -81,7 +81,12 @@ target_link_libraries(${PROJECT_NAME} raylib ${FLECS_TARGET})
 if ("${PLATFORM}" STREQUAL "Web")
     # Tell Emscripten to build an example.html file.
     set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
-    target_link_options(${PROJECT_NAME} PUBLIC -sUSE_GLFW=3 PUBLIC --preload-file resources)
+    target_link_options(${PROJECT_NAME} PUBLIC
+        -sUSE_GLFW=3
+        -sSTACK_SIZE=1MB
+        -sINITIAL_MEMORY=64MB
+        --shell-file ${CMAKE_SOURCE_DIR}/src/minshell.html
+        --preload-file resources)
 endif()
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)

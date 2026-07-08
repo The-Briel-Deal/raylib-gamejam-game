@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "game/game.h"
 
 struct CurrentGameInfo;
 
@@ -16,6 +17,15 @@ struct GameStateTemplate {
 };
 
 struct MainMenuState : GameStateTemplate {
+    void OnLoad(CurrentGameInfo& info) override;
+    void OnUnload(CurrentGameInfo& info) override;
+    void OnUpdate(CurrentGameInfo& info) override;
+    void OnRender(CurrentGameInfo& info) override;
+};
+
+struct InGameState : GameStateTemplate {
+    Game game{};
+    
     void OnLoad(CurrentGameInfo& info) override;
     void OnUnload(CurrentGameInfo& info) override;
     void OnUpdate(CurrentGameInfo& info) override;

@@ -1,4 +1,5 @@
 #include "game_state_controller.h"
+#include "../current_game_info.h"
 #include <raylib.h>
 
 void MainMenuState::OnLoad(CurrentGameInfo& info) {
@@ -10,16 +11,23 @@ void MainMenuState::OnUpdate(CurrentGameInfo& info) {
 }
 
 void MainMenuState::OnRender(CurrentGameInfo& info) {
-    DrawRectangle(70, 90, 200, 200, BLACK);
-    DrawRectangle(70 + 16, 90 + 16, 200 - 32, 200 - 32, RAYWHITE);
-    DrawText("raylib", 70 + 200 - MeasureText("raylib", 40) - 32, 90 + 200 - 40 - 24, 40, BLACK);
+    DrawText("GRUNGLE", 64, 64, 80, BLACK);
+    DrawText("THE GREAT AND STRONGK", 72, 64 + 80, 40, BLACK);
 
-    DrawText("6.x", 290, 90 - 26, 280, BLACK);
-    DrawText("GAMEJAM", 70, 90 + 210, 120, MAROON);
+    Rectangle playButton = {64, 64 + 80 + 40, 200, 60};
 
-    //if ((frameCounter/20)%2) DrawText("are you ready?", 160, 500, 50, BLACK);
+    auto mousePos = GetMousePosition();
 
-    DrawRectangleLinesEx((Rectangle){ 0, 0, (float)screenWidth, (float)screenHeight }, 16.0f, BLACK);
+    Color playColor = GREEN;
+    if (CheckCollisionPointRec(mousePos, playButton)) {
+        playColor = DARKGREEN;
+        if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) {
+            info.gameStateController->LoadGameState(info, std::make_shared<InGameState>());
+        }
+    }
+
+    DrawRectangleRec(playButton, playColor);
+    DrawText("PLAY", playButton.x + 10, playButton.y + 10, 40, BLACK);
 }
 
 void MainMenuState::OnUnload(CurrentGameInfo& info) {
