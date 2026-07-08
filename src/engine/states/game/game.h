@@ -113,6 +113,13 @@ struct Game {
     f32 time = 0.0f;
     f32 nausea = 0.0f;
 
+    bool paused = false;
+    bool pause_cursor_released = false;
+    i32 unpause_delay_frames = 0;
+    bool pause_blocked_after_unpause = false;
+    i32 cursor_hidden_after_unpause_frames = 0;
+    vec2 mouse_motion{};
+
     Level level;
 
     Game(Level level = {});

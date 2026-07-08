@@ -5,6 +5,10 @@
 #include <algorithm>
 #include <cmath>
 
+#if defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
+
 #include <glm/glm.hpp>
 using namespace glm;
 
@@ -30,6 +34,12 @@ f32vec3 U32ToVec(u32 u) {
 }
 
 namespace {
+    constexpr i32 UNPAUSE_DELAY_FRAMES = 2;
+    constexpr i32 POST_UNPAUSE_HIDDEN_FRAMES = 2;
+    constexpr f32 MOUSE_MOTION_MIX = 0.25f;
+    constexpr f32 MAX_MOUSE_DELTA_PER_FRAME = 96.0f;
+    constexpr f32 MOUSE_DELTA_EPSILON = 0.001f;
+
     constexpr f32 HEX_SIZE = 1.0f;
     constexpr f32 HEX_SQRT3 = 1.7320508075688772935f;
     constexpr f32 HEX_APOTHEM = HEX_SIZE * 0.86602540378443864676f;
@@ -228,6 +238,74 @@ namespace {
     inline f32vec3 HexFaceNormalFromEdge(i32 edge) {
         return HEX_FACE_NORMAL_3D[edge];
     }
+
+    inline Rectangle PauseScreenRect(f32 screen_w, f32 screen_h) {
+        return Rectangle{
+            screen_w * 0.25f,
+            screen_h * 0.25f,
+            screen_w * 0.5f,
+            screen_h * 0.5f
+        };
+    }
+
+    inline Rectangle PauseContinueButton(Rectangle pause_screen) {
+        return Rectangle{pause_screen.x + 40.0f, pause_screen.y + 120.0f, pause_screen.width - 80.0f, 60.0f};
+    }
+
+    inline Rectangle PauseExitButton(Rectangle pause_screen) {
+        Rectangle continue_button = PauseContinueButton(pause_screen);
+        return Rectangle{pause_screen.x + 40.0f, continue_button.y + 120.0f, pause_screen.width - 80.0f, 60.0f};
+    }
+
+    inline bool CursorCaptured() {
+#if defined(PLATFORM_WEB)
+        return EM_ASM_INT({
+            return document.pointerLockElement ? 1 : 0;
+        }) != 0;
+#else
+        return IsCursorHidden();
+#endif
+    }
+
+    inline void StartPause(Game& game) {
+        game.paused = true;
+        game.unpause_delay_frames = 0;
+        game.pause_blocked_after_unpause = false;
+        game.cursor_hidden_after_unpause_frames = 0;
+        game.mouse_motion = vec2(0.0f);
+
+        if (!game.pause_cursor_released) {
+            EnableCursor();
+            game.pause_cursor_released = true;
+        }
+    }
+
+    inline void StartUnpause(Game& game) {
+        game.unpause_delay_frames = UNPAUSE_DELAY_FRAMES;
+        game.pause_cursor_released = false;
+        game.pause_blocked_after_unpause = true;
+        game.cursor_hidden_after_unpause_frames = 0;
+        game.mouse_motion = vec2(0.0f);
+        DisableCursor();
+    }
+
+    inline vec2 SmoothMouseMotion(Game& game, Vector2 raw_delta) {
+        vec2 incoming_motion(
+            std::clamp(raw_delta.x, -MAX_MOUSE_DELTA_PER_FRAME, MAX_MOUSE_DELTA_PER_FRAME),
+            std::clamp(raw_delta.y, -MAX_MOUSE_DELTA_PER_FRAME, MAX_MOUSE_DELTA_PER_FRAME)
+        );
+
+        game.mouse_motion = mix(game.mouse_motion, incoming_motion, MOUSE_MOTION_MIX);
+
+        if (fabsf(game.mouse_motion.x) < MOUSE_DELTA_EPSILON) {
+            game.mouse_motion.x = 0.0f;
+        }
+        if (fabsf(game.mouse_motion.y) < MOUSE_DELTA_EPSILON) {
+            game.mouse_motion.y = 0.0f;
+        }
+
+        return game.mouse_motion;
+    }
 }
 
 void InGameState::OnLoad(CurrentGameInfo& info) {
@@ -262,13 +340,72 @@ void InGameState::OnLoad(CurrentGameInfo& info) {
 }
 
 void InGameState::OnUpdate(CurrentGameInfo& info) {
-
-}
-
-void InGameState::OnRender(CurrentGameInfo& info) {
     auto& level = game.level;
     game.time += 1.0f;
-    game.nausea = 0.0f;
+    game.nausea = 2.0f;
+
+    if (!game.pause_blocked_after_unpause && (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P))) {
+        if (game.paused && game.unpause_delay_frames == 0) {
+            StartUnpause(game);
+        } else if (!game.paused) {
+            StartPause(game);
+        }
+    }
+
+    if (game.pause_blocked_after_unpause) {
+        DisableCursor();
+
+        if (CursorCaptured()) {
+            game.cursor_hidden_after_unpause_frames++;
+            if (game.cursor_hidden_after_unpause_frames >= POST_UNPAUSE_HIDDEN_FRAMES) {
+                game.pause_blocked_after_unpause = false;
+            }
+        } else {
+            game.cursor_hidden_after_unpause_frames = 0;
+        }
+    } else if (!game.paused && !CursorCaptured()) {
+        StartPause(game);
+    }
+
+    if (game.unpause_delay_frames > 0) {
+        DisableCursor();
+        game.unpause_delay_frames--;
+
+        if (game.unpause_delay_frames == 0) {
+            game.paused = false;
+            game.pause_cursor_released = false;
+        }
+    } else if (!game.paused) {
+        if (!CursorCaptured()) {
+            DisableCursor();
+        }
+    }
+
+    if (game.paused && game.unpause_delay_frames == 0) {
+        auto mousePos = GetMousePosition();
+        Rectangle pause_screen = PauseScreenRect((f32)screenWidth, (f32)screenHeight);
+        Rectangle continue_button = PauseContinueButton(pause_screen);
+        Rectangle exit_button = PauseExitButton(pause_screen);
+
+        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
+            if (CheckCollisionPointRec(mousePos, continue_button)) {
+                StartUnpause(game);
+                return;
+            }
+
+            if (CheckCollisionPointRec(mousePos, exit_button)) {
+                info.gameStateController->LoadGameState(info, std::make_shared<MainMenuState>());
+                return;
+            }
+        }
+    }
+
+    vec2 mouseMotion(0.0f);
+    if (game.paused || game.unpause_delay_frames > 0 || game.pause_blocked_after_unpause || !CursorCaptured()) {
+        game.mouse_motion = vec2(0.0f);
+    } else {
+        mouseMotion = SmoothMouseMotion(game, GetMouseDelta());
+    }
 
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
@@ -285,19 +422,14 @@ void InGameState::OnRender(CurrentGameInfo& info) {
     const float MIX_VAL = 0.2f;
 
     info.flecs->each([&](EntityComponent& entity, PlayerComponent& player) {
-        if (IsKeyDown(KEY_RIGHT)) {
-            entity.yaw += 5;
-        }
-        if (IsKeyDown(KEY_LEFT)) {
-            entity.yaw -= 5;
+        if (game.paused) { // don't control player if paused
+            return;
         }
 
-        if (IsKeyDown(KEY_UP)) {
-            entity.pitch += 5;
-        }
-        if (IsKeyDown(KEY_DOWN)) {
-            entity.pitch -= 5;
-        }
+        const vec2 mouse_sensitivity(0.250f, 0.125f);
+        vec2 look_motion = mouseMotion * mouse_sensitivity;
+        entity.pitch -= look_motion.y;
+        entity.yaw += look_motion.x;
         entity.pitch = clamp(entity.pitch, -90.0f, 90.0f);
 
         if (IsKeyDown(KEY_W)) {
@@ -322,14 +454,6 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             entity.jumping = false;
         }
 
-        if (IsKeyPressed(KEY_ESCAPE)) {
-            EnableCursor();
-        }
-
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            DisableCursor();
-        }
-
         auto vec = vec2(entity.walk_x, entity.walk_z);
         f32 walk_len2 = dot(vec, vec);
         if (walk_len2 > 0.0f) {
@@ -344,6 +468,10 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         game.pitch = entity.pitch;
         game.yaw = entity.yaw;
     });
+
+    if (game.paused) {
+        return; // pause all entity updates
+    }
 
     info.flecs->each([&](EntityComponent& entity) {
         auto projected_pos = entity.pos + entity.velocity;
@@ -404,6 +532,22 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         entity.walk_x = 0.0f;
         entity.walk_z = 0.0f;
     });
+}
+
+void InGameState::OnRender(CurrentGameInfo& info) {
+    auto& level = game.level;
+
+    const f32 fov = 90.0f;
+    const f32 fov_rad = radians(fov);
+    const f32 half_width = tanf(fov_rad * 0.5f);
+
+    f32 yaw = glm::radians(game.yaw);
+
+    f32 forward_x = sinf(yaw);
+    f32 forward_z = cosf(yaw);
+
+    f32 right_x = cosf(yaw);
+    f32 right_z = -sinf(yaw);
 
     const i32 screen_w = 720;
     const i32 screen_h_i = 720;
@@ -465,7 +609,7 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         auto CameraDepthFromHexT = [](f32 t) -> f32 {
             return t;
         };
-
+        // Render Terrain
         while (depth < (f32)view_dist) {
             f32 old_height = prev_height;
 
@@ -556,6 +700,32 @@ void InGameState::OnRender(CurrentGameInfo& info) {
                 }
             }
         }
+    }
+
+    if (game.paused) {
+        auto mousePos = GetMousePosition();
+        Rectangle pause_screen = PauseScreenRect(screen_w_f, screen_h);
+        DrawRectangle(0, 0, screen_w, screen_h_i, Color{0, 0, 0, 120});
+        DrawRectangleRec(pause_screen, GRAY);
+        DrawText("Paused", (int)pause_screen.x + 95, (int)pause_screen.y + 30, 48, BLACK);
+
+        Rectangle continue_button = PauseContinueButton(pause_screen);
+        Color button_color = GREEN;
+        if (CheckCollisionPointRec(mousePos, continue_button)) {
+            button_color = DARKGREEN;
+        }
+
+        DrawRectangleRec(continue_button, button_color);
+        DrawText("Continue", (int)continue_button.x + 35, (int)continue_button.y + 10, 40, BLACK);
+
+        Rectangle exit_button = PauseExitButton(pause_screen);
+        button_color = GREEN;
+        if (CheckCollisionPointRec(mousePos, exit_button)) {
+            button_color = DARKGREEN;
+        }
+
+        DrawRectangleRec(exit_button, button_color);
+        DrawText("Exit", (int)exit_button.x + 35, (int)exit_button.y + 10, 40, BLACK);
     }
 }
 

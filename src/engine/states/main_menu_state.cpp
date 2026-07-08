@@ -11,8 +11,9 @@ void MainMenuState::OnUpdate(CurrentGameInfo& info) {
 }
 
 void MainMenuState::OnRender(CurrentGameInfo& info) {
-    DrawText("GRUNGLE", 64, 64, 80, BLACK);
-    DrawText("THE GREAT AND STRONGK", 72, 64 + 80, 40, BLACK);
+    //DrawText("GRUNGLE", 64, 64, 80, BLACK);
+    //DrawText("THE GREAT AND STRONGK", 72, 64 + 80, 40, BLACK);
+    DrawText("GAME COMPETITION ENTRY", 72, 64 + 80, 40, BLACK);
 
     Rectangle playButton = {64, 64 + 80 + 40, 200, 60};
 
