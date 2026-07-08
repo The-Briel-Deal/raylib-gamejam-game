@@ -51,8 +51,6 @@ namespace {
          1,  1,  0, -1, -1,  0
     };
 
-    // Normalized pointy-top hex face normals in warped hex-world space.
-    // These used to be rebuilt and normalized inside every HexRayStep call.
     static const vec2 HEX_FACE_NORMAL_2D[6] = {
         vec2( 0.5f,  0.86602540378443864676f),
         vec2(-0.5f,  0.86602540378443864676f),
@@ -138,7 +136,6 @@ namespace {
             const vec2 n = HEX_FACE_NORMAL_2D[edge];
             f32 denom = dot(ray_dir, n);
 
-            // Only faces the ray is moving out through can be exits.
             if (denom <= FACE_EPS) {
                 continue;
             }
@@ -171,7 +168,6 @@ namespace {
             out_step.edges[i] = best_edges[i];
         }
 
-        // Default edge choice: the most forward-facing tied face.
         i32 best_edge = best_edges[0];
         f32 best_score = -INFINITY;
 
@@ -202,8 +198,6 @@ namespace {
             return;
         }
 
-        // At a hex corner, multiple neighboring cells are geometrically valid.
-        // For rendering, prefer the one that creates the visible upward wall.
         i32 chosen_edge = step.edge;
         f32 best_rise = -INFINITY;
 
@@ -367,10 +361,23 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             entity.velocity.x -= normal.x;
             entity.velocity.z -= normal.z;
             height = level.AtConst(px, pz);
+
+            if (glm::length(normal) == 0.0f) {
+                entity.pos = projected_pos;
+                if (height > entity.pos.y) {
+                    entity.pos.y += 0.25f;
+                    if (entity.pos.y > height) {
+                        entity.pos.y = height;
+                    }
+                }
+            }
         } else {
             entity.pos = projected_pos;
             if (height > entity.pos.y) {
-                entity.pos.y = height;
+                entity.pos.y += 0.25f;
+                if (entity.pos.y > height) {
+                    entity.pos.y = height;
+                }
             }
         }
 
@@ -406,7 +413,7 @@ void InGameState::OnRender(CurrentGameInfo& info) {
     const f32 vertical_fov = glm::radians(90.0f);
     const f32 projection_scale = (screen_h * 0.5f) / tanf(vertical_fov * 0.5f);
 
-    const i32 view_dist = 50;
+    const i32 view_dist = 100;
     const f32 inv_view_dist = 1.0f / (f32)view_dist;
 
     f32vec3 sky_color = f32vec3(0.2f, 0.5f, 1.0f);
@@ -428,17 +435,6 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         f32 screen_x = ((i + 0.5f) / screen_w_f) * 2.0f - 1.0f;
         f32 camera_x = screen_x * half_width;
 
-        /*
-            The game level is still indexed by integers, but those integers are
-            now interpreted as axial hex coordinates:
-
-                level x -> axial q
-                level z -> axial r
-
-            The camera/player can stay in the same coordinate space as before.
-            For tracing only, we warp axial coordinates into pointy-top hex
-            world space, walk from hex face to hex face, then sample level.At(q,r).
-        */
         vec2 ray_dir = forward_world + right_world * camera_x;
 
         int map_x = start_cell.q;
@@ -466,8 +462,6 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             return (int)projected + nausea_offset;
         };
 
-        // ray_dir = forward_world + right_world * camera_x, and right_world is perpendicular,
-        // so camera-space depth is exactly the hex-world ray parameter t.
         auto CameraDepthFromHexT = [](f32 t) -> f32 {
             return t;
         };
@@ -480,8 +474,6 @@ void InGameState::OnRender(CurrentGameInfo& info) {
                 break;
             }
 
-            // Important: resolve vertex ties before changing map_x/map_z.
-            // This fixes the one-pixel column where two faces of the same raised hex meet.
             ResolveVisibleHexTie(enter_step, map_x, map_z, old_height, level);
 
             f32 cell_enter = enter_step.t;
