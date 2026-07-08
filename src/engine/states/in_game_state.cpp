@@ -3,8 +3,7 @@
 #include "../current_game_info.h"
 #include <raylib.h>
 #include <algorithm>
-#include <execution>
-#include <numeric>
+#include <cmath>
 
 #include <glm/glm.hpp>
 using namespace glm;
@@ -28,6 +27,213 @@ f32vec3 U32ToVec(u32 u) {
     vec.g = ((u >> 8) & 255) / 255.0f;
     vec.b = ((u >> 16) & 255) / 255.0f;
     return vec;
+}
+
+namespace {
+    constexpr f32 HEX_SIZE = 1.0f;
+    constexpr f32 HEX_SQRT3 = 1.7320508075688772935f;
+    constexpr f32 HEX_APOTHEM = HEX_SIZE * 0.86602540378443864676f;
+
+    constexpr f32 FACE_EPS = 0.000001f;
+    constexpr f32 TIE_EPS = 0.00001f;
+    constexpr f32 STEP_EPS = 0.00001f;
+
+    struct HexCell {
+        i32 q;
+        i32 r;
+    };
+
+    static const i32 HEX_NEIGHBOR_Q[6] = {
+         0, -1, -1,  0,  1,  1
+    };
+
+    static const i32 HEX_NEIGHBOR_R[6] = {
+         1,  1,  0, -1, -1,  0
+    };
+
+    // Normalized pointy-top hex face normals in warped hex-world space.
+    // These used to be rebuilt and normalized inside every HexRayStep call.
+    static const vec2 HEX_FACE_NORMAL_2D[6] = {
+        vec2( 0.5f,  0.86602540378443864676f),
+        vec2(-0.5f,  0.86602540378443864676f),
+        vec2(-1.0f,  0.0f),
+        vec2(-0.5f, -0.86602540378443864676f),
+        vec2( 0.5f, -0.86602540378443864676f),
+        vec2( 1.0f,  0.0f),
+    };
+
+    static const f32vec3 HEX_FACE_NORMAL_3D[6] = {
+        f32vec3(-0.5f, 0.0f, -0.86602540378443864676f),
+        f32vec3( 0.5f, 0.0f, -0.86602540378443864676f),
+        f32vec3( 1.0f, 0.0f, -0.0f),
+        f32vec3( 0.5f, 0.0f,  0.86602540378443864676f),
+        f32vec3(-0.5f, 0.0f,  0.86602540378443864676f),
+        f32vec3(-1.0f, 0.0f, -0.0f),
+    };
+
+    inline vec2 HexAxialToWorld(f32 q, f32 r) {
+        return vec2(
+            HEX_SIZE * HEX_SQRT3 * (q + r * 0.5f),
+            HEX_SIZE * 1.5f * r
+        );
+    }
+
+    inline vec2 HexWorldVectorToAxial(vec2 v) {
+        f32 r = v.y / (HEX_SIZE * 1.5f);
+        f32 q = v.x / (HEX_SIZE * HEX_SQRT3) - r * 0.5f;
+        return vec2(q, r);
+    }
+
+    inline HexCell HexRound(f32 q, f32 r) {
+        f32 cube_x = q;
+        f32 cube_z = r;
+        f32 cube_y = -cube_x - cube_z;
+
+        i32 rx = (i32)roundf(cube_x);
+        i32 ry = (i32)roundf(cube_y);
+        i32 rz = (i32)roundf(cube_z);
+
+        f32 x_diff = fabsf((f32)rx - cube_x);
+        f32 y_diff = fabsf((f32)ry - cube_y);
+        f32 z_diff = fabsf((f32)rz - cube_z);
+
+        if (x_diff > y_diff && x_diff > z_diff) {
+            rx = -ry - rz;
+        } else if (y_diff > z_diff) {
+            ry = -rx - rz;
+        } else {
+            rz = -rx - ry;
+        }
+
+        return HexCell{ rx, rz };
+    }
+
+    struct HexStepResult {
+        f32 t;
+        i32 edge;
+        i32 next_q;
+        i32 next_r;
+        bool vertex_tie;
+
+        i32 edge_count;
+        i32 edges[6];
+    };
+
+    inline bool HexRayStep(
+        i32 q,
+        i32 r,
+        vec2 ray_origin,
+        vec2 ray_dir,
+        f32 min_t,
+        HexStepResult& out_step
+    ) {
+        vec2 center = HexAxialToWorld((f32)q, (f32)r);
+        vec2 origin_from_center = ray_origin - center;
+
+        f32 best_t = INFINITY;
+        i32 best_edges[6] = {};
+        i32 best_count = 0;
+
+        for (i32 edge = 0; edge < 6; edge++) {
+            const vec2 n = HEX_FACE_NORMAL_2D[edge];
+            f32 denom = dot(ray_dir, n);
+
+            // Only faces the ray is moving out through can be exits.
+            if (denom <= FACE_EPS) {
+                continue;
+            }
+
+            f32 numer = HEX_APOTHEM - dot(origin_from_center, n);
+            f32 t = numer / denom;
+
+            if (t <= min_t) {
+                continue;
+            }
+
+            if (t < best_t - TIE_EPS) {
+                best_t = t;
+                best_edges[0] = edge;
+                best_count = 1;
+            } else if (fabsf(t - best_t) <= TIE_EPS && best_count < 6) {
+                best_edges[best_count++] = edge;
+            }
+        }
+
+        if (best_count <= 0 || !std::isfinite(best_t)) {
+            return false;
+        }
+
+        out_step.t = best_t;
+        out_step.edge_count = best_count;
+        out_step.vertex_tie = best_count > 1;
+
+        for (i32 i = 0; i < best_count; i++) {
+            out_step.edges[i] = best_edges[i];
+        }
+
+        // Default edge choice: the most forward-facing tied face.
+        i32 best_edge = best_edges[0];
+        f32 best_score = -INFINITY;
+
+        for (i32 i = 0; i < best_count; i++) {
+            i32 edge = best_edges[i];
+            f32 score = dot(ray_dir, HEX_FACE_NORMAL_2D[edge]);
+            if (score > best_score) {
+                best_score = score;
+                best_edge = edge;
+            }
+        }
+
+        out_step.edge = best_edge;
+        out_step.next_q = q + HEX_NEIGHBOR_Q[best_edge];
+        out_step.next_r = r + HEX_NEIGHBOR_R[best_edge];
+
+        return true;
+    }
+
+    inline void ResolveVisibleHexTie(
+        HexStepResult& step,
+        i32 q,
+        i32 r,
+        f32 old_height,
+        Level& level
+    ) {
+        if (!step.vertex_tie || step.edge_count <= 1) {
+            return;
+        }
+
+        // At a hex corner, multiple neighboring cells are geometrically valid.
+        // For rendering, prefer the one that creates the visible upward wall.
+        i32 chosen_edge = step.edge;
+        f32 best_rise = -INFINITY;
+
+        for (i32 i = 0; i < step.edge_count; i++) {
+            i32 edge = step.edges[i];
+
+            i32 nq = q + HEX_NEIGHBOR_Q[edge];
+            i32 nr = r + HEX_NEIGHBOR_R[edge];
+
+            f32 h = 0.0f;
+            if (level.InBounds(nq, nr)) {
+                h = level.At(nq, nr);
+            }
+
+            f32 rise = h - old_height;
+
+            if (rise > best_rise) {
+                best_rise = rise;
+                chosen_edge = edge;
+            }
+        }
+
+        step.edge = chosen_edge;
+        step.next_q = q + HEX_NEIGHBOR_Q[chosen_edge];
+        step.next_r = r + HEX_NEIGHBOR_R[chosen_edge];
+    }
+
+    inline f32vec3 HexFaceNormalFromEdge(i32 edge) {
+        return HEX_FACE_NORMAL_3D[edge];
+    }
 }
 
 void InGameState::OnLoad(CurrentGameInfo& info) {
@@ -62,14 +268,13 @@ void InGameState::OnLoad(CurrentGameInfo& info) {
 }
 
 void InGameState::OnUpdate(CurrentGameInfo& info) {
-    
+
 }
 
 void InGameState::OnRender(CurrentGameInfo& info) {
-
     auto& level = game.level;
     game.time += 1.0f;
-    game.nausea = 1.0f;
+    game.nausea = 0.0f;
 
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
@@ -132,8 +337,9 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         }
 
         auto vec = vec2(entity.walk_x, entity.walk_z);
-        if (length(vec) > 0) {
-            vec = normalize(vec);
+        f32 walk_len2 = dot(vec, vec);
+        if (walk_len2 > 0.0f) {
+            vec *= 1.0f / sqrtf(walk_len2);
         }
         entity.walk_x = vec.x;
         entity.walk_z = vec.y;
@@ -146,11 +352,12 @@ void InGameState::OnRender(CurrentGameInfo& info) {
     });
 
     info.flecs->each([&](EntityComponent& entity) {
-        
         auto projected_pos = entity.pos + entity.velocity;
 
-        int px = (int)projected_pos.x;
-        int pz = (int)projected_pos.z;
+        HexCell player_cell = HexRound(projected_pos.x, projected_pos.z);
+
+        int px = player_cell.q;
+        int pz = player_cell.r;
 
         auto height = level.AtConst(px, pz);
         if (height > projected_pos.y + entity.step_height) {
@@ -178,122 +385,110 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         }
 
         if (entity.on_ground) {
-            entity.velocity.x = mix(entity.velocity.x, entity.walk_x, MIX_VAL);
-            entity.velocity.z = mix(entity.velocity.z, entity.walk_z, MIX_VAL);
+            auto axial_walk = HexWorldVectorToAxial({entity.walk_x, entity.walk_z});
+            entity.velocity.x = mix(entity.velocity.x, axial_walk.x, MIX_VAL);
+            entity.velocity.z = mix(entity.velocity.z, axial_walk.y, MIX_VAL);
             if (entity.jumping) {
                 entity.velocity.y = 1.5f;
                 entity.jumping = false;
             }
         }
-        
+
         entity.walk_x = 0.0f;
         entity.walk_z = 0.0f;
     });
 
-    auto c_ix = (int)game.camera.x;
-    auto c_iz = (int)game.camera.z;
-
+    const i32 screen_w = 720;
+    const i32 screen_h_i = 720;
+    const f32 screen_w_f = 720.0f;
     const f32 screen_h = 720.0f;
+    const f32 screen_center_y = 360.0f + game.pitch * 10.0f;
     const f32 vertical_fov = glm::radians(90.0f);
     const f32 projection_scale = (screen_h * 0.5f) / tanf(vertical_fov * 0.5f);
 
     const i32 view_dist = 50;
+    const f32 inv_view_dist = 1.0f / (f32)view_dist;
 
     f32vec3 sky_color = f32vec3(0.2f, 0.5f, 1.0f);
+    Color sky_draw_color = VecToColor(sky_color);
 
-    DrawRectangle(0, 0, 720, 720, VecToColor(sky_color));
+    DrawRectangle(0, 0, screen_w, screen_h_i, sky_draw_color);
 
-    for (int i = 0; i < 720; i++) {
-        f32 screen_x = ((i + 0.5f) / 720.0f) * 2.0f - 1.0f;
+    vec2 ray_origin = HexAxialToWorld(game.camera.x, game.camera.z);
+    vec2 forward_world = vec2(forward_x, forward_z);
+    vec2 right_world = vec2(forward_world.y, -forward_world.x);
+
+    HexCell start_cell = HexRound(game.camera.x, game.camera.z);
+
+    const f32vec3 sun_dir = normalize(f32vec3(1, 1, 1));
+    const bool use_nausea = game.nausea != 0.0f;
+    const f32 nausea_time = game.time * 0.05f;
+
+    for (int i = 0; i < screen_w; i++) {
+        f32 screen_x = ((i + 0.5f) / screen_w_f) * 2.0f - 1.0f;
         f32 camera_x = screen_x * half_width;
 
-        f32 ray_x = forward_x + right_x * camera_x;
-        f32 ray_z = forward_z + right_z * camera_x;
+        /*
+            The game level is still indexed by integers, but those integers are
+            now interpreted as axial hex coordinates:
 
-        int map_x = (int)floorf(game.camera.x);
-        int map_z = (int)floorf(game.camera.z);
+                level x -> axial q
+                level z -> axial r
 
-        int step_x;
-        int step_z;
+            The camera/player can stay in the same coordinate space as before.
+            For tracing only, we warp axial coordinates into pointy-top hex
+            world space, walk from hex face to hex face, then sample level.At(q,r).
+        */
+        vec2 ray_dir = forward_world + right_world * camera_x;
 
-        f32 t_delta_x;
-        f32 t_delta_z;
+        int map_x = start_cell.q;
+        int map_z = start_cell.r;
 
-        f32 t_max_x;
-        f32 t_max_z;
-
-        if (ray_x > 0.0f) {
-            step_x = 1;
-            t_delta_x = 1.0f / ray_x;
-            t_max_x = ((map_x + 1.0f) - game.camera.x) / ray_x;
-        } else if (ray_x < 0.0f) {
-            step_x = -1;
-            t_delta_x = -1.0f / ray_x;
-            t_max_x = (game.camera.x - map_x) / -ray_x;
-        } else {
-            step_x = 0;
-            t_delta_x = INFINITY;
-            t_max_x = INFINITY;
-        }
-
-        if (ray_z > 0.0f) {
-            step_z = 1;
-            t_delta_z = 1.0f / ray_z;
-            t_max_z = ((map_z + 1.0f) - game.camera.z) / ray_z;
-        } else if (ray_z < 0.0f) {
-            step_z = -1;
-            t_delta_z = -1.0f / ray_z;
-            t_max_z = (game.camera.z - map_z) / -ray_z;
-        } else {
-            step_z = 0;
-            t_delta_z = INFINITY;
-            t_max_z = INFINITY;
-        }
-
-        int y_top = 720;
-
+        int y_top = screen_h_i;
         f32 depth = 0.0f;
 
-        int prev_x = map_x;
-        int prev_z = map_z;
-
         f32 prev_height = 0.0f;
-        if (level.InBounds(prev_x, prev_z)) {
-            prev_height = level.At(prev_x, prev_z);
+        if (level.InBounds(map_x, map_z)) {
+            prev_height = level.At(map_x, map_z);
+        }
+
+        int nausea_offset = 0;
+        if (use_nausea) {
+            nausea_offset = (int)(game.nausea * glm::sin((float)i * 0.01f + nausea_time) * 15.0f);
         }
 
         auto ProjectY = [&](f32 world_y, f32 d) -> int {
             f32 safe_d = std::max(d, 0.001f);
-            f32 screen_center_y = 360.0f + game.pitch * 10.0f;
-
             f32 projected =
                 screen_center_y -
                 ((world_y - game.camera.y) / safe_d) * projection_scale;
 
-            return (int)projected + (int)(game.nausea * glm::cos((float)i * 0.01f + game.time * 0.05f) * 15.0f);
+            return (int)projected + nausea_offset;
+        };
+
+        // ray_dir = forward_world + right_world * camera_x, and right_world is perpendicular,
+        // so camera-space depth is exactly the hex-world ray parameter t.
+        auto CameraDepthFromHexT = [](f32 t) -> f32 {
+            return t;
         };
 
         while (depth < (f32)view_dist) {
-            prev_x = map_x;
-            prev_z = map_z;
-
             f32 old_height = prev_height;
 
-            f32 cell_enter;
-
-            if (t_max_x < t_max_z) {
-                cell_enter = t_max_x;
-                depth = t_max_x;
-                t_max_x += t_delta_x;
-                map_x += step_x;
-            } else {
-                cell_enter = t_max_z;
-                depth = t_max_z;
-                t_max_z += t_delta_z;
-                map_z += step_z;
+            HexStepResult enter_step{};
+            if (!HexRayStep(map_x, map_z, ray_origin, ray_dir, depth + STEP_EPS, enter_step)) {
+                break;
             }
 
-            f32 cell_exit = std::min(t_max_x, t_max_z);
+            // Important: resolve vertex ties before changing map_x/map_z.
+            // This fixes the one-pixel column where two faces of the same raised hex meet.
+            ResolveVisibleHexTie(enter_step, map_x, map_z, old_height, level);
+
+            f32 cell_enter = enter_step.t;
+            depth = cell_enter;
+
+            map_x = enter_step.next_q;
+            map_z = enter_step.next_r;
 
             if (!level.InBounds(map_x, map_z)) {
                 prev_height = 0.0f;
@@ -303,26 +498,32 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             f32 world_height = level.At(map_x, map_z);
             prev_height = world_height;
 
+            HexStepResult exit_step{};
+            f32 cell_exit = cell_enter + 1.0f;
+            if (HexRayStep(map_x, map_z, ray_origin, ray_dir, cell_enter + STEP_EPS, exit_step)) {
+                cell_exit = exit_step.t;
+            }
+
             auto hit_color = U32ToVec(level.ColorAt(map_x, map_z));
 
-            f32 dist_norm = std::clamp(cell_enter / (float)view_dist, 0.0f, 1.0f);
+            f32 dist_norm = std::clamp(cell_enter * inv_view_dist, 0.0f, 1.0f);
             hit_color = mix(hit_color, sky_color, dist_norm);
 
-            auto sun_dir = normalize(f32vec3(1, 1, 1));
-
             if (world_height > old_height) {
-                int y_top_wall = ProjectY(world_height, cell_enter);
-                int y_bottom_wall = ProjectY(old_height, cell_enter);
+                f32 enter_depth = CameraDepthFromHexT(cell_enter);
 
-                int draw_top = std::clamp(y_top_wall, 0, 720);
-                int draw_bottom = std::clamp(y_bottom_wall, 0, 720);
+                int y_top_wall = ProjectY(world_height, enter_depth);
+                int y_bottom_wall = ProjectY(old_height, enter_depth);
+
+                int draw_top = std::clamp(y_top_wall, 0, screen_h_i);
+                int draw_bottom = std::clamp(y_bottom_wall, 0, screen_h_i);
 
                 draw_bottom = std::min(draw_bottom, y_top);
 
                 if (draw_top < draw_bottom) {
-                    f32vec3 wall_normal = level.NormalAt(map_x, map_z);
+                    f32vec3 wall_normal = HexFaceNormalFromEdge(enter_step.edge);
 
-                    f32 sunlight = (dot(wall_normal, sun_dir) + 3.0f) / 4.0f;
+                    f32 sunlight = (dot(wall_normal, sun_dir) + 3.0f) * 0.25f;
                     auto color = VecToColor(mix(hit_color * sunlight, sky_color, dist_norm));
 
                     DrawLine(i, draw_bottom, i, draw_top, color);
@@ -336,18 +537,21 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             }
 
             if (world_height < game.camera.y) {
-                int y_near = ProjectY(world_height, cell_enter);
-                int y_far  = ProjectY(world_height, cell_exit);
+                f32 enter_depth = CameraDepthFromHexT(cell_enter);
+                f32 exit_depth  = CameraDepthFromHexT(cell_exit);
 
-                int draw_top = std::clamp(std::min(y_near, y_far), 0, 720);
-                int draw_bottom = std::clamp(std::max(y_near, y_far), 0, 720);
+                int y_near = ProjectY(world_height, enter_depth);
+                int y_far  = ProjectY(world_height, exit_depth);
+
+                int draw_top = std::clamp(std::min(y_near, y_far), 0, screen_h_i);
+                int draw_bottom = std::clamp(std::max(y_near, y_far), 0, screen_h_i);
 
                 draw_bottom = std::min(draw_bottom, y_top);
 
                 if (draw_top < draw_bottom) {
                     f32vec3 top_normal = level.NormalAt(map_x, map_z);
 
-                    f32 sunlight = (dot(top_normal, sun_dir) + 3.0f) / 4.0f;
+                    f32 sunlight = (dot(top_normal, sun_dir) + 3.0f) * 0.25f;
                     auto color = VecToColor(mix(hit_color * sunlight, sky_color, dist_norm));
 
                     DrawLine(i, draw_bottom, i, draw_top, color);
