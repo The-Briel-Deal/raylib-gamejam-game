@@ -4,18 +4,19 @@
 #include "raylib.h"
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
 
 struct RenderSystem {
-    const int screenWidth = 720;
-    const int screenHeight = 720;
 
     RenderTexture2D target = { 0 };  // Render texture to render our game
     int frameCounter = 0;
+    const int screenWidth = 720;
+    const int screenHeight = 720;
 
     RenderSystem();
-    void DrawFrame();
+
+    void BeginFrame();
+
+    void EndFrame();
 
     void Unload();
 };

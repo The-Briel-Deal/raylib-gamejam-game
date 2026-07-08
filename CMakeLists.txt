@@ -6,6 +6,48 @@ add_subdirectory(subprojects/raylib)
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Use raylib's Web platform automatically when CMake is configured with emcc/em++.
+if (EMSCRIPTEN OR CMAKE_C_COMPILER MATCHES "emcc$" OR CMAKE_CXX_COMPILER MATCHES "em\\+\\+$")
+    set(PLATFORM Web CACHE STRING "raylib platform" FORCE)
+endif()
+
+# Dependencies
+set(RAYLIB_VERSION 6.0)
+set(FLECS_VERSION 4.1.6)
+
+FetchContent_Declare(
+    raylib
+    DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    URL https://github.com/raysan5/raylib/archive/refs/tags/${RAYLIB_VERSION}.tar.gz
+    FIND_PACKAGE_ARGS
+)
+
+FetchContent_Declare(
+    flecs
+    DOWNLOAD_EXTRACT_TIMESTAMP OFF
+    URL https://github.com/SanderMertens/flecs/archive/refs/tags/v${FLECS_VERSION}.tar.gz
+    FIND_PACKAGE_ARGS
+)
+
+set(FLECS_SHARED OFF CACHE BOOL "Build shared flecs lib" FORCE)
+set(FLECS_STATIC ON CACHE BOOL "Build static flecs lib" FORCE)
+set(FLECS_TESTS OFF CACHE BOOL "Build flecs tests" FORCE)
+
+FetchContent_MakeAvailable(raylib)
+FetchContent_MakeAvailable(flecs)
+
+if (TARGET flecs::flecs_static)
+    set(FLECS_TARGET flecs::flecs_static)
+elseif (TARGET flecs_static)
+    set(FLECS_TARGET flecs_static)
+elseif (TARGET flecs::flecs)
+    set(FLECS_TARGET flecs::flecs)
+elseif (TARGET flecs)
+    set(FLECS_TARGET flecs)
+else()
+    message(FATAL_ERROR "Flecs was found, but no CMake target was exported")
+endif()
+
 # Our Project
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
@@ -33,7 +75,7 @@ else()
 endif()
 
 #set(raylib_VERBOSE 1)
-target_link_libraries(${PROJECT_NAME} raylib)
+target_link_libraries(${PROJECT_NAME} raylib ${FLECS_TARGET})
 
 # Web Configurations
 if ("${PLATFORM}" STREQUAL "Web")
