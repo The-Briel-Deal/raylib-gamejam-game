@@ -4,6 +4,7 @@
 
 
 #include <flecs.h>
+#include <memory>
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -16,30 +17,30 @@
     #define LOG(...)
 #endif
 
-static CurrentGameInfo* gameInfo{};
+static CurrentGameInfo gameInfo{};
+static std::unique_ptr<RenderSystem> renderSystem{};
+static std::unique_ptr<GameStateController> stateController{};
 
 void MainLoop() {
-    gameInfo->renderSystem->BeginFrame();
-    gameInfo->frameCounter = gameInfo->renderSystem->frameCounter;
-    gameInfo->gameStateController->OnUpdate(*gameInfo);
-    gameInfo->gameStateController->OnRender(*gameInfo);
-    gameInfo->renderSystem->EndFrame();
+    gameInfo.renderSystem->BeginFrame();
+    gameInfo.frameCounter = gameInfo.renderSystem->frameCounter;
+    gameInfo.gameStateController->OnUpdate(gameInfo);
+    gameInfo.gameStateController->OnRender(gameInfo);
+    gameInfo.renderSystem->EndFrame();
 }
 
 int main(void) {
+    gameInfo.flecs = std::make_unique<flecs::world>();
 
-    CurrentGameInfo info{};
-    auto renderSystem = RenderSystem();
-    info.renderSystem = &renderSystem;
+    renderSystem = std::make_unique<RenderSystem>();
+    gameInfo.renderSystem = renderSystem.get();
     
-    auto stateController = GameStateController(info);
-
-    gameInfo = &info;
+    stateController = std::make_unique<GameStateController>(gameInfo);
 
     #if defined(PLATFORM_WEB)
-        emscripten_set_main_loop(MainLoop, 60, 1);
+        emscripten_set_main_loop(MainLoop, 20, 1);
     #else
-        SetTargetFPS(60);
+        SetTargetFPS(20);
         //--------------------------------------------------------------------------------------
 
         // Main game loop
@@ -49,5 +50,7 @@ int main(void) {
         }
     #endif
 
-    renderSystem.Unload();
+    stateController->Unload(gameInfo);
+    renderSystem->Unload();
+    gameInfo.flecs = nullptr;
 }

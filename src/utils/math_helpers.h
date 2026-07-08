@@ -4,19 +4,17 @@ On MurmurHash:
  -> Right number = output count
  -> Returns a f32 between 0 and 1
 */
+#pragma once
 #ifndef MATH_H
 #define MATH_H
 
-#include <stdint.h>
-#include <string.h>
 #include <glm/glm.hpp>
 
-#include <math.h>
 
 using namespace glm;
 
 //MurmurHash -> https://www.shadertoy.com/view/ttc3zr?__cf_chl_f_tk=DnspPjnIRvqXbcVjlhGqkpp10bN.uUHQe3GAEA0qCFw-1783380466-1.0.1.1-ovr2qMcEsvsnOTvtLhZFcRksOrcDOltICVDgOAHFM0M
-u32 murmurHash11(u32 src) {
+inline u32 murmurHash11(u32 src) {
     const u32 M = 0x5bd1e995u;
     u32 h = 1190494759u;
     src *= M; src ^= src >> 24u; src *= M;
@@ -28,12 +26,12 @@ u32 murmurHash11(u32 src) {
 /// @brief One input, one output
 /// @param src 
 /// @return 
-f32 hash11(f32 src) {
+inline f32 hash11(f32 src) {
     u32 h = murmurHash11(floatBitsToUint(src));
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
 }
 
-u32 murmurHash12(u32 x, u32 y) {
+inline u32 murmurHash12(u32 x, u32 y) {
     const u32 M = 0x5bd1e995u;
     u32 h = 1190494759u;
     x *= M; y *= M;
@@ -47,12 +45,12 @@ u32 murmurHash12(u32 x, u32 y) {
 /// @param x 
 /// @param y 
 /// @return 
-f32 hash12(f32 x, f32 y) {
+inline f32 hash12(f32 x, f32 y) {
     u32 h = murmurHash12(floatBitsToUint(x), floatBitsToUint(y));
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
 }
 
-u32 murmurHash13(u32 x, u32 y, u32 z) {
+inline u32 murmurHash13(u32 x, u32 y, u32 z) {
     const u32 M = 0x5bd1e995u;
     u32 h = 1190494759u;
     x *= M; y *= M; z *= M;
@@ -67,12 +65,12 @@ u32 murmurHash13(u32 x, u32 y, u32 z) {
 /// @param y 
 /// @param z 
 /// @return 
-f32 hash13(f32 x, f32 y, f32 z) {
+inline f32 hash13(f32 x, f32 y, f32 z) {
     u32 h = murmurHash13(floatBitsToUint(x), floatBitsToUint(y), floatBitsToUint(z));
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0;
 }
 
-u32vec2 murmurHash21(u32 src) {
+inline u32vec2 murmurHash21(u32 src) {
     const u32 M = 0x5bd1e995u;
 
     u32vec2 h = u32vec2(1190494759u, 2147483647u);
@@ -99,14 +97,14 @@ u32vec2 murmurHash21(u32 src) {
 /// @brief One input two outputs
 /// @param src 
 /// @return 
-f32vec2 hash21(f32 src) {
+inline f32vec2 hash21(f32 src) {
     u32vec2 h = murmurHash21(floatBitsToUint(src));
     h.x = (h.x & 0x007fffffu | 0x3f800000u);
     h.y = (h.y & 0x007fffffu | 0x3f800000u);
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0f;
 }
 
-u32vec2 murmurHash22(u32vec2 src) {
+inline u32vec2 murmurHash22(u32vec2 src) {
     const u32 M = 0x5bd1e995u;
 
     u32vec2 h = u32vec2(1190494759u, 2147483647u);
@@ -135,14 +133,14 @@ u32vec2 murmurHash22(u32vec2 src) {
 }
 
 /// @brief two inputs two outputs
-f32vec2 hash22(f32 x, f32 y) {
+inline f32vec2 hash22(f32 x, f32 y) {
     u32vec2 h = murmurHash22(u32vec2(floatBitsToUint(x), floatBitsToUint(y)));
     h.x = (h.x & 0x007fffffu | 0x3f800000u);
     h.y = (h.y & 0x007fffffu | 0x3f800000u);
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0f;
 }
 
-u32vec2 murmurHash23(u32 src_x, u32 src_y, u32 src_z) {
+inline u32vec2 murmurHash23(u32 src_x, u32 src_y, u32 src_z) {
     const u32 M = 0x5bd1e995u;
 
     u32vec2 h = u32vec2(1190494759u, 2147483647u);
@@ -175,14 +173,14 @@ u32vec2 murmurHash23(u32 src_x, u32 src_y, u32 src_z) {
 }
 
 /// @brief three inputs two outputs
-f32vec2 hash23(f32 x, f32 y, f32 z) {
+inline f32vec2 hash23(f32 x, f32 y, f32 z) {
     u32vec2 h = murmurHash23(floatBitsToUint(x), floatBitsToUint(y), floatBitsToUint(z));
     h.x = (h.x & 0x007fffffu | 0x3f800000u);
     h.y = (h.y & 0x007fffffu | 0x3f800000u);
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0f;
 }
 
-uvec3 murmurHash33(uvec3 src) {
+inline uvec3 murmurHash33(uvec3 src) {
     const uint M = 0x5bd1e995u;
     uvec3 h = uvec3(1190494759u, 2147483647u, 3559788179u);
     src *= M; src ^= src>>24u; src *= M;
@@ -194,14 +192,14 @@ uvec3 murmurHash33(uvec3 src) {
 /// @brief 3 outputs 3 inputs
 /// @param src 
 /// @return 
-vec3 hash33(vec3 src) {
+inline vec3 hash33(vec3 src) {
     uvec3 h = murmurHash33(floatBitsToUint(src));
     return uintBitsToFloat(h & 0x007fffffu | 0x3f800000u) - 1.0f;
 }
 
 /// Noise: https://www.shadertoy.com/view/4sc3z2
 
-float perlin_noise(vec3 p)
+inline float perlin_noise(vec3 p)
 {
     vec3 pi = floor(p);
     vec3 pf = p - pi;
