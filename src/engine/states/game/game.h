@@ -1,4 +1,6 @@
 #pragma once
+#ifndef GAME_H
+#define GAME_H
 
 #include <glm/glm.hpp>
 
@@ -7,6 +9,7 @@
 #include "../../../utils/math_helpers.h"
 #include <unordered_map>
 #include <flecs.h>
+struct CurrentGameInfo;
 
 using namespace glm;
 
@@ -140,11 +143,14 @@ struct Game {
     i32 cursor_hidden_after_unpause_frames = 0;
     vec2 mouse_motion{};
 
+    i32 select_x = -1;
+    i32 select_z = -1;
+
     Level level;
 
     Game(Level level = {});
 
     void BuildLevel(std::vector<LevelShape> shapes);
-
-    
+    void OnRender(CurrentGameInfo& info);
 };
+#endif

@@ -1,8 +1,6 @@
 #pragma once
 
 #include "../game/game.h"
-#include "../game_state_controller.h"
-#include "../../current_game_info.h"
 
 #include <raylib.h>
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#ifndef CURRENT_GAME_INFO_H
+#define CURRENT_GAME_INFO_H
 #include "rendering/render_system.h"
 #include "states/game_state_controller.h"
 #include <flecs.h>
@@ -11,3 +13,5 @@ struct CurrentGameInfo {
     std::unique_ptr<flecs::world> flecs = nullptr;
     int frameCounter = 0;
 };
+
+#endif

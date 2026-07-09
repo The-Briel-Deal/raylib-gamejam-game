@@ -1,4 +1,6 @@
 #pragma once
+#ifndef GAME_STATE_CONTROLLER_H
+#define GAME_STATE_CONTROLLER_H
 
 #include <memory>
 #include "game/game.h"
@@ -32,6 +34,15 @@ struct InGameState : GameStateTemplate {
     void OnRender(CurrentGameInfo& info) override;
 };
 
+struct LevelEditorState : GameStateTemplate {
+    Game game{};
+
+    void OnLoad(CurrentGameInfo& info) override;
+    void OnUnload(CurrentGameInfo& info) override;
+    void OnUpdate(CurrentGameInfo& info) override;
+    void OnRender(CurrentGameInfo& info) override;
+};
+
 struct GameStateController {
     std::shared_ptr<GameStateTemplate> gameState = nullptr;
 
@@ -45,3 +56,4 @@ struct GameStateController {
 
     void Unload(CurrentGameInfo& info);
 };
+#endif
