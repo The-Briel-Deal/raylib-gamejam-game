@@ -29,17 +29,20 @@ void LevelEditorState::OnUnload(CurrentGameInfo& info) {
 }
 
 void LevelEditorState::OnUpdate(CurrentGameInfo& info) {
+
+    auto& frame = info.gameStateController->frame;
+
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
-    const f32 half_width = tanf(fov_rad * 0.5f);
+    const f32 half_width = glm::tan(fov_rad * 0.5f);
 
     f32 yaw = glm::radians(game.yaw);
 
-    f32 forward_x = sinf(yaw);
-    f32 forward_z = cosf(yaw);
+    f32 forward_x = glm::sin(yaw);
+    f32 forward_z = glm::cos(yaw);
 
-    f32 right_x = cosf(yaw);
-    f32 right_z = -sinf(yaw);
+    f32 right_x = glm::cos(yaw);
+    f32 right_z = -glm::sin(yaw);
 
     f32vec3 walk_dir{};
 
@@ -92,7 +95,8 @@ void LevelEditorState::OnUpdate(CurrentGameInfo& info) {
         }
     }
 
-    if (DrawTextButton(10, 10, 200, 40, "Back")) {
+    frame.SetCursorPos({10, 10});
+    if (frame.DrawButton("Back")) {
         info.gameStateController->LoadGameState(info, std::make_shared<MainMenuState>());
     }
 

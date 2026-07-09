@@ -42,15 +42,15 @@ void Game::OnRender(CurrentGameInfo& info) {
     auto iMouse = i32vec2((int)mousePos.x, (int)mousePos.y);
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
-    const f32 half_width = tanf(fov_rad * 0.5f);
+    const f32 half_width = glm::tan(fov_rad * 0.5f);
 
     f32 yaw = glm::radians(this->yaw);
 
-    f32 forward_x = sinf(yaw);
-    f32 forward_z = cosf(yaw);
+    f32 forward_x = glm::sin(yaw);
+    f32 forward_z = glm::cos(yaw);
 
-    f32 right_x = cosf(yaw);
-    f32 right_z = -sinf(yaw);
+    f32 right_x = glm::cos(yaw);
+    f32 right_z = -glm::sin(yaw);
 
     const i32 screen_w = 720;
     const i32 screen_h_i = 720;
@@ -58,7 +58,7 @@ void Game::OnRender(CurrentGameInfo& info) {
     const f32 screen_h = 720.0f;
     const f32 screen_center_y = 360.0f + pitch * 10.0f;
     const f32 vertical_fov = glm::radians(90.0f);
-    const f32 projection_scale = (screen_h * 0.5f) / tanf(vertical_fov * 0.5f);
+    const f32 projection_scale = (screen_h * 0.5f) / glm::tan(vertical_fov * 0.5f);
 
     const i32 view_dist = 100;
     const f32 inv_view_dist = 1.0f / (f32)view_dist;
@@ -103,7 +103,7 @@ void Game::OnRender(CurrentGameInfo& info) {
         }
 
         auto ProjectY = [&](f32 world_y, f32 d) -> int {
-            f32 safe_d = std::max(d, 0.001f);
+            f32 safe_d = glm::max(d, 0.001f);
             f32 projected =
                 screen_center_y -
                 ((world_y - camera.y) / safe_d) * projection_scale;
@@ -181,7 +181,7 @@ void Game::OnRender(CurrentGameInfo& info) {
 
             auto hit_color = U32ToVec(level.ColorAt(map_x, map_z));
 
-            f32 dist_norm = std::clamp(cell_enter * inv_view_dist, 0.0f, 1.0f);
+            f32 dist_norm = glm::clamp(cell_enter * inv_view_dist, 0.0f, 1.0f);
             hit_color = mix(hit_color, sky_color, dist_norm);
 
 
@@ -192,10 +192,10 @@ void Game::OnRender(CurrentGameInfo& info) {
                 int y_top_wall = ProjectY(world_height, enter_depth);
                 int y_bottom_wall = ProjectY(old_height, enter_depth);
 
-                int draw_top = std::clamp(y_top_wall, 0, screen_h_i);
-                int draw_bottom = std::clamp(y_bottom_wall, 0, screen_h_i);
+                int draw_top = glm::clamp(y_top_wall, 0, screen_h_i);
+                int draw_bottom = glm::clamp(y_bottom_wall, 0, screen_h_i);
 
-                draw_bottom = std::min(draw_bottom, y_top);
+                draw_bottom = glm::min(draw_bottom, y_top);
 
                 if (draw_top < draw_bottom) {
                     f32vec3 wall_normal = HexFaceNormalFromEdge(enter_step.edge);
@@ -237,10 +237,10 @@ void Game::OnRender(CurrentGameInfo& info) {
                 int y_near = ProjectY(world_height, enter_depth);
                 int y_far  = ProjectY(world_height, exit_depth);
 
-                int draw_top = std::clamp(std::min(y_near, y_far), 0, screen_h_i);
-                int draw_bottom = std::clamp(std::max(y_near, y_far), 0, screen_h_i);
+                int draw_top = glm::clamp(glm::min(y_near, y_far), 0, screen_h_i);
+                int draw_bottom = glm::clamp(glm::max(y_near, y_far), 0, screen_h_i);
 
-                draw_bottom = std::min(draw_bottom, y_top);
+                draw_bottom = glm::min(draw_bottom, y_top);
 
                 if (draw_top < draw_bottom) {
                     f32vec3 top_normal = level.NormalAt(map_x, map_z);
