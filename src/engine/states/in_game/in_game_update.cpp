@@ -1,4 +1,6 @@
 #include "in_game_common.h"
+#include "../game_state_controller.h"
+#include "../../current_game_info.h"
 
 using namespace glm;
 using namespace in_game;
