@@ -1,6 +1,7 @@
 #include "game_state_controller.h"
 #include "../current_game_info.h"
 #include <raylib.h>
+#include <string>
 
 void MainMenuState::OnLoad(CurrentGameInfo& info) {
 
@@ -9,6 +10,10 @@ void MainMenuState::OnLoad(CurrentGameInfo& info) {
 void MainMenuState::OnUpdate(CurrentGameInfo& info) {
     
 }
+
+std::string text = "Test Input";
+float test_value = 0.0f;
+bool check = false;
 
 void MainMenuState::OnRender(CurrentGameInfo& info) {
     //DrawText("GRUNGLE", 64, 64, 80, BLACK);
@@ -27,13 +32,18 @@ void MainMenuState::OnRender(CurrentGameInfo& info) {
 
     auto mousePos = GetMousePosition();
 
-    if (info.gameStateController->frame.DrawButton("PLAY")) {
+    if (frame.DrawButton("PLAY")) {
         info.gameStateController->LoadGameState(info, std::make_shared<InGameState>());
     }
 
-    if (info.gameStateController->frame.DrawButton("LEVEL EDIT")) {
+    if (frame.DrawButton("LEVEL EDIT")) {
         info.gameStateController->LoadGameState(info, std::make_shared<LevelEditorState>());
     }
+
+    frame.DrawTextInput(text);
+
+    frame.DrawFloatSlider(test_value, 0.0f, 10.0f);
+    frame.DrawCheckbox("Checkbox Test", check);
 }
 
 void MainMenuState::OnUnload(CurrentGameInfo& info) {
