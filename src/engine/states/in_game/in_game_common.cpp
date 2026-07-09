@@ -76,13 +76,13 @@ f32vec3 ColorToVec(Color u) {
         f32 cube_z = r;
         f32 cube_y = -cube_x - cube_z;
 
-        i32 rx = (i32)roundf(cube_x);
-        i32 ry = (i32)roundf(cube_y);
-        i32 rz = (i32)roundf(cube_z);
+        i32 rx = (i32)glm::round(cube_x);
+        i32 ry = (i32)glm::round(cube_y);
+        i32 rz = (i32)glm::round(cube_z);
 
-        f32 x_diff = fabsf((f32)rx - cube_x);
-        f32 y_diff = fabsf((f32)ry - cube_y);
-        f32 z_diff = fabsf((f32)rz - cube_z);
+        f32 x_diff = glm::abs((f32)rx - cube_x);
+        f32 y_diff = glm::abs((f32)ry - cube_y);
+        f32 z_diff = glm::abs((f32)rz - cube_z);
 
         if (x_diff > y_diff && x_diff > z_diff) {
             rx = -ry - rz;
@@ -129,12 +129,12 @@ f32vec3 ColorToVec(Color u) {
                 best_t = t;
                 best_edges[0] = edge;
                 best_count = 1;
-            } else if (fabsf(t - best_t) <= TIE_EPS && best_count < 6) {
+            } else if (glm::abs(t - best_t) <= TIE_EPS && best_count < 6) {
                 best_edges[best_count++] = edge;
             }
         }
 
-        if (best_count <= 0 || !std::isfinite(best_t)) {
+        if (best_count <= 0 || glm::isnan(best_t) || glm::isinf(best_t)) {
             return false;
         }
 
@@ -216,15 +216,6 @@ f32vec3 ColorToVec(Color u) {
         };
     }
 
-    Rectangle PauseContinueButton(Rectangle pause_screen) {
-        return Rectangle{pause_screen.x + 40.0f, pause_screen.y + 120.0f, pause_screen.width - 80.0f, 60.0f};
-    }
-
-    Rectangle PauseExitButton(Rectangle pause_screen) {
-        Rectangle continue_button = PauseContinueButton(pause_screen);
-        return Rectangle{pause_screen.x + 40.0f, continue_button.y + 120.0f, pause_screen.width - 80.0f, 60.0f};
-    }
-
     bool CursorCaptured() {
 #if defined(PLATFORM_WEB)
         return EM_ASM_INT({
@@ -259,16 +250,16 @@ f32vec3 ColorToVec(Color u) {
 
     vec2 SmoothMouseMotion(Game& game, Vector2 raw_delta) {
         vec2 incoming_motion(
-            std::clamp(raw_delta.x, -MAX_MOUSE_DELTA_PER_FRAME, MAX_MOUSE_DELTA_PER_FRAME),
-            std::clamp(raw_delta.y, -MAX_MOUSE_DELTA_PER_FRAME, MAX_MOUSE_DELTA_PER_FRAME)
+            glm::clamp(raw_delta.x, -MAX_MOUSE_DELTA_PER_FRAME, MAX_MOUSE_DELTA_PER_FRAME),
+            glm::clamp(raw_delta.y, -MAX_MOUSE_DELTA_PER_FRAME, MAX_MOUSE_DELTA_PER_FRAME)
         );
 
         game.mouse_motion = mix(game.mouse_motion, incoming_motion, MOUSE_MOTION_MIX);
 
-        if (fabsf(game.mouse_motion.x) < MOUSE_DELTA_EPSILON) {
+        if (glm::abs(game.mouse_motion.x) < MOUSE_DELTA_EPSILON) {
             game.mouse_motion.x = 0.0f;
         }
-        if (fabsf(game.mouse_motion.y) < MOUSE_DELTA_EPSILON) {
+        if (glm::abs(game.mouse_motion.y) < MOUSE_DELTA_EPSILON) {
             game.mouse_motion.y = 0.0f;
         }
 

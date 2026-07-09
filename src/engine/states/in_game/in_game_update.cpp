@@ -47,25 +47,6 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
         }
     }
 
-    if (game.paused && game.unpause_delay_frames == 0) {
-        auto mousePos = GetMousePosition();
-        Rectangle pause_screen = PauseScreenRect((f32)screenWidth, (f32)screenHeight);
-        Rectangle continue_button = PauseContinueButton(pause_screen);
-        Rectangle exit_button = PauseExitButton(pause_screen);
-
-        if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            if (CheckCollisionPointRec(mousePos, continue_button)) {
-                StartUnpause(game);
-                return;
-            }
-
-            if (CheckCollisionPointRec(mousePos, exit_button)) {
-                info.gameStateController->LoadGameState(info, std::make_shared<MainMenuState>());
-                return;
-            }
-        }
-    }
-
     vec2 mouseMotion(0.0f);
     if (game.paused || game.unpause_delay_frames > 0 || game.pause_blocked_after_unpause || !CursorCaptured()) {
         game.mouse_motion = vec2(0.0f);
@@ -75,15 +56,15 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
 
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
-    const f32 half_width = tanf(fov_rad * 0.5f);
+    const f32 half_width = glm::tan(fov_rad * 0.5f);
 
     f32 yaw = glm::radians(game.yaw);
 
-    f32 forward_x = sinf(yaw);
-    f32 forward_z = cosf(yaw);
+    f32 forward_x = glm::sin(yaw);
+    f32 forward_z = glm::cos(yaw);
 
-    f32 right_x = cosf(yaw);
-    f32 right_z = -sinf(yaw);
+    f32 right_x = glm::cos(yaw);
+    f32 right_z = -glm::sin(yaw);
 
     const float MIX_VAL = 0.2f;
 
@@ -123,7 +104,7 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
         auto vec = vec2(entity.walk_x, entity.walk_z);
         f32 walk_len2 = dot(vec, vec);
         if (walk_len2 > 0.0f) {
-            vec *= 1.0f / sqrtf(walk_len2);
+            vec *= 1.0f / glm::sqrt(walk_len2);
         }
         entity.walk_x = vec.x;
         entity.walk_z = vec.y;

@@ -16,11 +16,11 @@ bool ProjectEntityRect(
     constexpr float fov = 90.0f;
 
     float fov_rad = glm::radians(fov);
-    float half_width = tanf(fov_rad * 0.5f);
-    float projection_scale = (screen_h * 0.5f) / tanf(glm::radians(90.0f) * 0.5f);
+    float half_width = glm::tan(fov_rad * 0.5f);
+    float projection_scale = (screen_h * 0.5f) / glm::tan(glm::radians(90.0f) * 0.5f);
 
     float yaw = glm::radians(game.yaw);
-    vec2 forward_world(sinf(yaw), cosf(yaw));
+    vec2 forward_world(glm::sin(yaw), glm::cos(yaw));
     vec2 right_world(forward_world.y, -forward_world.x);
 
     vec2 cam_world = HexAxialToWorld(game.camera.x, game.camera.z);
@@ -33,7 +33,7 @@ bool ProjectEntityRect(
     float side = dot(rel, right_world);
     float camera_x = side / depth;
 
-    if (fabsf(camera_x) > half_width) return false;
+    if (glm::abs(camera_x) > half_width) return false;
 
     float screen_x = ((camera_x / half_width) * 0.5f + 0.5f) * screen_w;
 
@@ -91,15 +91,15 @@ void InGameState::OnRender(CurrentGameInfo& info) {
 
     const f32 fov = 90.0f;
     const f32 fov_rad = radians(fov);
-    const f32 half_width = tanf(fov_rad * 0.5f);
+    const f32 half_width = glm::tan(fov_rad * 0.5f);
 
     f32 yaw = glm::radians(game.yaw);
 
-    f32 forward_x = sinf(yaw);
-    f32 forward_z = cosf(yaw);
+    f32 forward_x = glm::sin(yaw);
+    f32 forward_z = glm::cos(yaw);
 
-    f32 right_x = cosf(yaw);
-    f32 right_z = -sinf(yaw);
+    f32 right_x = glm::cos(yaw);
+    f32 right_z = -glm::sin(yaw);
 
     const i32 screen_w = 720;
     const i32 screen_h_i = 720;
@@ -107,7 +107,7 @@ void InGameState::OnRender(CurrentGameInfo& info) {
     const f32 screen_h = 720.0f;
     const f32 screen_center_y = 360.0f + game.pitch * 10.0f;
     const f32 vertical_fov = glm::radians(90.0f);
-    const f32 projection_scale = (screen_h * 0.5f) / tanf(vertical_fov * 0.5f);
+    const f32 projection_scale = (screen_h * 0.5f) / glm::tan(vertical_fov * 0.5f);
 
     const i32 view_dist = 100;
     const f32 inv_view_dist = 1.0f / (f32)view_dist;
@@ -137,7 +137,7 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             }
 
             auto ProjectY = [&](f32 world_y, f32 d) -> int {
-                f32 safe_d = std::max(d, 0.001f);
+                f32 safe_d = glm::max(d, 0.001f);
                 f32 projected =
                     screen_center_y -
                     ((world_y - game.camera.y) / safe_d) * projection_scale;
@@ -168,27 +168,37 @@ void InGameState::OnRender(CurrentGameInfo& info) {
 
     if (game.paused) {
         auto mousePos = GetMousePosition();
+
+
         Rectangle pause_screen = PauseScreenRect(screen_w_f, screen_h);
         DrawRectangle(0, 0, screen_w, screen_h_i, Color{0, 0, 0, 120});
-        DrawRectangleRec(pause_screen, GRAY);
-        DrawText("Paused", (int)pause_screen.x + 95, (int)pause_screen.y + 30, 48, BLACK);
 
-        Rectangle continue_button = PauseContinueButton(pause_screen);
-        Color button_color = GREEN;
-        if (CheckCollisionPointRec(mousePos, continue_button)) {
-            button_color = DARKGREEN;
+        menu_frame.frame_pos = {pause_screen.x, pause_screen.y};
+        menu_frame.frame_size = {pause_screen.width, pause_screen.height};
+        menu_frame.background_color = GRAY;
+
+        menu_frame.BeginDrawing();
+
+        menu_frame.SetCursorPos({95, 30});
+        auto style = menu_frame.GetCurrentStyle();
+        style.text_size = 48;
+        menu_frame.PushStyle(style);
+
+        menu_frame.DrawLabel("Paused");
+
+        menu_frame.PopStyle();
+        style.text_size = 40;
+        menu_frame.PushStyle(style);
+
+        menu_frame.SetCursorPos({40, 120});
+        if (menu_frame.DrawButton("Continue")) {
+            StartUnpause(game);
         }
 
-        DrawRectangleRec(continue_button, button_color);
-        DrawText("Continue", (int)continue_button.x + 35, (int)continue_button.y + 10, 40, BLACK);
-
-        Rectangle exit_button = PauseExitButton(pause_screen);
-        button_color = GREEN;
-        if (CheckCollisionPointRec(mousePos, exit_button)) {
-            button_color = DARKGREEN;
+        if (menu_frame.DrawButton("Exit")) {
+            info.gameStateController->LoadGameState(info, std::make_shared<MainMenuState>());
         }
 
-        DrawRectangleRec(exit_button, button_color);
-        DrawText("Exit", (int)exit_button.x + 35, (int)exit_button.y + 10, 40, BLACK);
+        menu_frame.EndDrawing();
     }
 }

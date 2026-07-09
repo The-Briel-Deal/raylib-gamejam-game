@@ -4,6 +4,7 @@
 
 #include <memory>
 #include "game/game.h"
+#include "gui_common.h"
 
 struct CurrentGameInfo;
 
@@ -26,6 +27,7 @@ struct MainMenuState : GameStateTemplate {
 };
 
 struct InGameState : GameStateTemplate {
+    GuiFrame menu_frame{};
     Game game{};
     
     void OnLoad(CurrentGameInfo& info) override;
@@ -45,6 +47,8 @@ struct LevelEditorState : GameStateTemplate {
 
 struct GameStateController {
     std::shared_ptr<GameStateTemplate> gameState = nullptr;
+
+    GuiFrame frame{};
 
     GameStateController(CurrentGameInfo& info);
 

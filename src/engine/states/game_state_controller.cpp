@@ -23,7 +23,12 @@ void GameStateController::OnRender(CurrentGameInfo& info) {
     if (gameState == nullptr) {
         return;
     }
+    frame.has_background = false;
+    frame.has_border = false;
+    frame.frame_size = {720, 720};
+    frame.BeginDrawing();
     gameState->OnRender(info);
+    frame.EndDrawing();
 }
 
 void GameStateController::Unload(CurrentGameInfo& info) {
