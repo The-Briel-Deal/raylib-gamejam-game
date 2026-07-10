@@ -3,6 +3,7 @@
 #include "../../current_game_info.h"
 #include "../in_game/in_game_common.h"
 #include "raylib.h"
+#include <rlgl.h>
 
 using namespace in_game;
 
@@ -82,6 +83,7 @@ void Game::OnRender(CurrentGameInfo& info) {
 
     bool hit = false;
     
+    rlBegin(RL_LINES);
     for (int i = 0; i < screen_w; i++) {
         f32 screen_x = ((i + 0.5f) / screen_w_f) * 2.0f - 1.0f;
         f32 camera_x = screen_x * half_width;
@@ -220,9 +222,13 @@ void Game::OnRender(CurrentGameInfo& info) {
                     
 
                     if (recolor_selected && within_radius) {
-                        DrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
+                        rlColor4ub((unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a);
+                        rlVertex2f((float)i, (float)draw_bottom);
+                        rlVertex2f((float)i, (float)draw_top);
                     } else {
-                        DrawLine(i, draw_bottom, i, draw_top, color);
+                        rlColor4ub(color.r, color.g, color.b, color.a);
+                        rlVertex2f((float)i, (float)draw_bottom);
+                        rlVertex2f((float)i, (float)draw_top);
                     }
 
                     y_top = draw_top;
@@ -266,9 +272,13 @@ void Game::OnRender(CurrentGameInfo& info) {
                     }
                     
                     if (recolor_selected && within_radius) {
-                        DrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
+                        rlColor4ub((unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a);
+                        rlVertex2f((float)i, (float)draw_bottom);
+                        rlVertex2f((float)i, (float)draw_top);
                     } else {
-                        DrawLine(i, draw_bottom, i, draw_top, color);
+                        rlColor4ub(color.r, color.g, color.b, color.a);
+                        rlVertex2f((float)i, (float)draw_bottom);
+                        rlVertex2f((float)i, (float)draw_top);
                     }
 
                     y_top = draw_top;
@@ -280,4 +290,5 @@ void Game::OnRender(CurrentGameInfo& info) {
             }
         }
     }
+    rlEnd();
 }

@@ -3,7 +3,7 @@ project(raylib-game-template)
 
 include(FetchContent)
 
-add_subdirectory(subprojects/raylib)
+#add_subdirectory(subprojects/raylib)
 
 # Generate compile_commands.json
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

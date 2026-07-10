@@ -38,9 +38,9 @@ int main(void) {
     stateController = std::make_unique<GameStateController>(gameInfo);
 
     #if defined(PLATFORM_WEB)
-        emscripten_set_main_loop(MainLoop, 20, 1);
+        emscripten_set_main_loop(MainLoop, 60, 1);
     #else
-        SetTargetFPS(20);
+        SetTargetFPS(60);
         //--------------------------------------------------------------------------------------
 
         // Main game loop
