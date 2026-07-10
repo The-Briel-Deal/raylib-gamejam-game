@@ -11,10 +11,6 @@ void MainMenuState::OnUpdate(CurrentGameInfo& info) {
     
 }
 
-std::string text = "Test Input";
-float test_value = 0.0f;
-bool check = false;
-
 void MainMenuState::OnRender(CurrentGameInfo& info) {
     //DrawText("GRUNGLE", 64, 64, 80, BLACK);
     //DrawText("THE GREAT AND STRONGK", 72, 64 + 80, 40, BLACK);
@@ -39,11 +35,6 @@ void MainMenuState::OnRender(CurrentGameInfo& info) {
     if (frame.DrawButton("LEVEL EDIT")) {
         info.gameStateController->LoadGameState(info, std::make_shared<LevelEditorState>());
     }
-
-    frame.DrawTextInput(text);
-
-    frame.DrawFloatSlider(test_value, 0.0f, 10.0f);
-    frame.DrawCheckbox("Checkbox Test", check);
 }
 
 void MainMenuState::OnUnload(CurrentGameInfo& info) {

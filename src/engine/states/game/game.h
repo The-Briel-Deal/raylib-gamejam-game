@@ -60,13 +60,7 @@ struct Level {
             for (int z = 0; z < (i32)length; z++) {
                 auto& height = At(x, z);
                 auto& color = ColorAt(x, z);
-
-                auto fx = (float)x;
-                auto fz = (float)z;
-                
-                height = perlin_noise(vec3(fx * 0.1f, 0, fz * 0.1f)) * 10.0f;
                 color = 0x00ff00;
-                
             }
         }
     }
@@ -127,6 +121,8 @@ struct EntityVisibilityCheck {
 };
 
 struct Game {
+    bool recolor_selected = false;
+    int select_radius = 1;
     GameCamera camera{};
     f32 pitch = 0.0f;
     f32 yaw = 0.0f;
