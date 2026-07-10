@@ -75,6 +75,8 @@ void Game::OnRender(CurrentGameInfo& info) {
     const bool use_nausea = nausea != 0.0f;
     const f32 nausea_time = time * 0.05f;
 
+    int SX = select_x;
+    int SZ = select_z;
     select_x = -1;
     select_z = -1;
 
@@ -184,7 +186,7 @@ void Game::OnRender(CurrentGameInfo& info) {
             f32 dist_norm = glm::clamp(cell_enter * inv_view_dist, 0.0f, 1.0f);
             hit_color = mix(hit_color, sky_color, dist_norm);
 
-
+            bool within_radius = (map_x - SX) * (map_x - SX) + (map_z - SZ) * (map_z - SZ) < select_radius * select_radius;
 
             if (world_height > old_height) {
                 f32 enter_depth = CameraDepthFromHexT(cell_enter);
@@ -215,10 +217,11 @@ void Game::OnRender(CurrentGameInfo& info) {
                             }
                         }
                     }
-                    if (selected) {
-                        DrawLine(i, draw_bottom, i, draw_top, RED);
-                    }
-                    else {
+                    
+
+                    if (recolor_selected && within_radius) {
+                        DrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
+                    } else {
                         DrawLine(i, draw_bottom, i, draw_top, color);
                     }
 
@@ -261,10 +264,10 @@ void Game::OnRender(CurrentGameInfo& info) {
                             }
                         }
                     }
-                    if (selected) {
-                        DrawLine(i, draw_bottom, i, draw_top, RED);
-                    }
-                    else {
+                    
+                    if (recolor_selected && within_radius) {
+                        DrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
+                    } else {
                         DrawLine(i, draw_bottom, i, draw_top, color);
                     }
 

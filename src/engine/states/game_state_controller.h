@@ -5,6 +5,7 @@
 #include <memory>
 #include "game/game.h"
 #include "gui_common.h"
+#include <string>
 
 struct CurrentGameInfo;
 
@@ -36,8 +37,21 @@ struct InGameState : GameStateTemplate {
     void OnRender(CurrentGameInfo& info) override;
 };
 
+enum class EditingMode {
+    RAISE, LOWER, PAINT, SMOOTH, SET_HEIGHT
+};
+
 struct LevelEditorState : GameStateTemplate {
     Game game{};
+    GuiFrame edit_frame{};
+    EditingMode editMode = EditingMode::RAISE;
+    int setHeight = 1;
+    int radius = 1;
+    int power = 100;
+    int rgb_paint = 0xffffff;
+    Color paintColor;
+    bool load_screen = false;
+    std::string name = "Level Name";
 
     void OnLoad(CurrentGameInfo& info) override;
     void OnUnload(CurrentGameInfo& info) override;
