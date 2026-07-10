@@ -66,6 +66,7 @@ compile_commands.json
 
 # Build folder
 [Bb]uild
+build_web
 
 # Android files
 *apk*
@@ -78,3 +79,5 @@ android.*
 *.js
 !src/minshell.html
 !src/shell.html
+
+.clangd
