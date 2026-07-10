@@ -6,6 +6,14 @@
 
 using namespace in_game;
 
+static int draw_line_counter = 0;
+
+inline static void GameDrawLine(int startPosX, int startPosY, int endPosX,
+                                int endPosY, Color color) {
+  draw_line_counter++;
+  DrawLine(startPosX, startPosY, endPosX, endPosY, color);
+}
+
 Game::Game(Level level) : level(std::move(level)) {
     camera.x = (f32)this->level.width / 2.0f;
     camera.z = (f32)this->level.length / 2.0f;
@@ -220,9 +228,9 @@ void Game::OnRender(CurrentGameInfo& info) {
                     
 
                     if (recolor_selected && within_radius) {
-                        DrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
+                        GameDrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
                     } else {
-                        DrawLine(i, draw_bottom, i, draw_top, color);
+                        GameDrawLine(i, draw_bottom, i, draw_top, color);
                     }
 
                     y_top = draw_top;
@@ -266,9 +274,9 @@ void Game::OnRender(CurrentGameInfo& info) {
                     }
                     
                     if (recolor_selected && within_radius) {
-                        DrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
+                        GameDrawLine(i, draw_bottom, i, draw_top, {(unsigned char)(255 - color.r), (unsigned char)(255 - color.g), (unsigned char)(255 - color.b), color.a});
                     } else {
-                        DrawLine(i, draw_bottom, i, draw_top, color);
+                        GameDrawLine(i, draw_bottom, i, draw_top, color);
                     }
 
                     y_top = draw_top;
@@ -280,4 +288,7 @@ void Game::OnRender(CurrentGameInfo& info) {
             }
         }
     }
+    
+    TraceLog(LOG_DEBUG, "Lines drawn this frame = %d", draw_line_counter);
+    draw_line_counter = 0;
 }
