@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.24...3.30)
 project(raylib-game-template)
 
+include(FetchContent)
+
 add_subdirectory(subprojects/raylib)
 
 # Generate compile_commands.json
