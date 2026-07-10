@@ -79,3 +79,5 @@ android.*
 *.js
 !src/minshell.html
 !src/shell.html
+
+.clangd
