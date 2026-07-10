@@ -40,7 +40,6 @@ int main(void) {
     #if defined(PLATFORM_WEB)
         emscripten_set_main_loop(MainLoop, 20, 1);
     #else
-        SetTargetFPS(20);
         //--------------------------------------------------------------------------------------
 
         // Main game loop
