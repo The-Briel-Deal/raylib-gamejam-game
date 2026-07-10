@@ -3,8 +3,6 @@
 
 #include "raylib.h"
 
-#include <stdio.h>
-
 struct RenderSystem {
 
     RenderTexture2D target = { 0 };  // Render texture to render our game
