@@ -29,6 +29,7 @@ struct MainMenuState : GameStateTemplate {
 
 struct InGameState : GameStateTemplate {
     GuiFrame menu_frame{};
+    GuiFrame game_frame{};
     Game game{};
     
     void OnLoad(CurrentGameInfo& info) override;

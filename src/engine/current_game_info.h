@@ -16,7 +16,10 @@ struct CurrentGameInfo {
 
     Texture2D grungle_title_screen[2];
     Texture2D eye_beams;
+    Texture2D grungle_icons[4];
+    Texture2D hotbar;
     f32 frame_delta = 0.0f;
+    f32 frame_time = 0.0f;
 };
 
 #endif

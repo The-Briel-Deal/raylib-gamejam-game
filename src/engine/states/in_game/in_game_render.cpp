@@ -60,6 +60,7 @@ bool ProjectEntityRect(
 }
 
 void InGameState::OnRender(CurrentGameInfo& info) {
+    
     auto& level = game.level;
 
     game.entity_buckets.clear();
@@ -165,6 +166,22 @@ void InGameState::OnRender(CurrentGameInfo& info) {
             }
         }
     });
+
+    game_frame.has_background = false;
+    game_frame.has_border = false;
+    game_frame.BeginDrawing();
+    float mult = 2.0f;
+    float icon_size = info.grungle_icons[0].width * mult;
+
+    game_frame.SetCursorPos({-(720.0f / 2.0f) * mult + (720.0f / 2), 720 - icon_size});
+    game_frame.DrawImage(info.hotbar, {720 * mult, icon_size});
+
+    game_frame.SetCursorPos({720.0f / 2 - icon_size / 2, 720.0f - icon_size});
+    game_frame.DrawImage(info.grungle_icons[(int)(info.frame_time * 2.0f) & 3], {icon_size, icon_size});
+
+
+
+    game_frame.EndDrawing();
 
     if (game.paused) {
         auto mousePos = GetMousePosition();

@@ -16,6 +16,8 @@ void MainMenuState::OnRender(CurrentGameInfo& info) {
     //DrawText("GRUNGLE", 64, 64, 80, BLACK);
     //DrawText("THE GREAT AND STRONGK", 72, 64 + 80, 40, BLACK);
 
+    DrawRectangleGradientV(0, 0, 720, 720, RED, BLACK);
+
     static float timer = 0.0f;
     timer += info.frame_delta;
 

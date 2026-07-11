@@ -29,12 +29,20 @@ void MainLoop() {
     gameInfo.gameStateController->OnUpdate(gameInfo);
     gameInfo.gameStateController->OnRender(gameInfo);
     gameInfo.renderSystem->EndFrame();
+    gameInfo.frame_time += GetFrameTime();
 }
 
 void LoadTextures() {
     gameInfo.grungle_title_screen[0] = LoadTexture("resources/grungle_title_screen.png");
     gameInfo.grungle_title_screen[1] = LoadTexture("resources/grungle_title_screen2.png");
     gameInfo.eye_beams = LoadTexture("resources/eye_beams.png");
+
+    gameInfo.grungle_icons[0] = LoadTexture("resources/grungle_icon_left.png");
+    gameInfo.grungle_icons[1] = LoadTexture("resources/grungle_icon_middle.png");
+    gameInfo.grungle_icons[2] = LoadTexture("resources/grungle_icon_right.png");
+    gameInfo.grungle_icons[3] = gameInfo.grungle_icons[1];
+
+    gameInfo.hotbar = LoadTexture("resources/grungle_hotbar.png");
 }
 
 int main(void) {
