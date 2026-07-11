@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <string>
 
 using namespace glm;
 
@@ -83,6 +84,27 @@ void DrawHex(ElementHex element, Vector2 center, bool lifted)
     if (element == ElementHex::ICE) DrawIce(center);
     if (element == ElementHex::WIND) DrawWind(center);
 }
+
+Color ElementColor(ElementHex element)
+{
+    if (element == ElementHex::FIRE) return Color{255, 91, 42, 255};
+    if (element == ElementHex::ICE) return Color{100, 220, 255, 255};
+    return Color{113, 245, 175, 255};
+}
+
+const char *ElementPrefix(ElementHex element)
+{
+    if (element == ElementHex::FIRE) return "EMBER";
+    if (element == ElementHex::ICE) return "FROST";
+    return "GALE";
+}
+
+const char *WeaponForm(ElementHex element)
+{
+    if (element == ElementHex::FIRE) return "BLADE";
+    if (element == ElementHex::ICE) return "LANCE";
+    return "STAFF";
+}
 }
 
 void UpdateElementHexUi(Game& game)
@@ -144,5 +166,61 @@ void DrawElementHexUi(const Game& game)
     i32 size = 14;
     DrawText(hint, GetScreenWidth()/2 - MeasureText(hint, size)/2, GetScreenHeight() - 126, size,
         game.arranging_hexes ? Color{255, 236, 184, 255} : Color{210, 214, 222, 190});
+}
+
+void DrawElementWeapon(const Game& game)
+{
+    ElementHex core = game.element_hexes[0];
+    ElementHex form = game.element_hexes[1];
+    ElementHex accent = game.element_hexes[2];
+    Color coreColor = ElementColor(core);
+    Color accentColor = ElementColor(accent);
+
+    f32 bob = game.arranging_hexes ? 0.0f : sinf(game.time*0.055f)*3.0f;
+    Vector2 grip = {(f32)GetScreenWidth() - 65.0f, (f32)GetScreenHeight() - 122.0f + bob};
+    Vector2 guard = {grip.x - 49.0f, grip.y - 72.0f};
+    Vector2 tip = {guard.x - 90.0f, guard.y - 117.0f};
+
+    // The hand and wrapped grip anchor the weapon in first-person view.
+    DrawCircle((i32)(grip.x + 22.0f), (i32)(grip.y + 34.0f), 42.0f, Color{105, 66, 48, 255});
+    DrawLineEx(grip, guard, 22.0f, Color{45, 31, 35, 255});
+    for (i32 i = 0; i < 4; i++) {
+        f32 t = (f32)i/4.0f;
+        Vector2 p = {grip.x + (guard.x - grip.x)*t, grip.y + (guard.y - grip.y)*t};
+        DrawLineEx({p.x - 8.0f, p.y + 4.0f}, {p.x + 8.0f, p.y - 4.0f}, 3.0f, accentColor);
+    }
+
+    if (form == ElementHex::FIRE) {
+        // Broad elemental blade.
+        Vector2 blade[] = {
+            {guard.x - 18.0f, guard.y + 8.0f}, {tip.x, tip.y},
+            {guard.x + 8.0f, guard.y - 19.0f}, {guard.x + 22.0f, guard.y - 2.0f}
+        };
+        DrawTriangleFan(blade, 4, ColorAlpha(coreColor, 0.82f));
+        DrawLineEx({guard.x - 8.0f, guard.y - 5.0f}, tip, 5.0f, RAYWHITE);
+        DrawLineEx({guard.x - 27.0f, guard.y + 17.0f}, {guard.x + 27.0f, guard.y - 20.0f}, 10.0f, accentColor);
+    } else if (form == ElementHex::ICE) {
+        // Long lance with a faceted crystal point.
+        DrawLineEx(guard, {tip.x + 13.0f, tip.y + 17.0f}, 12.0f, Color{68, 59, 70, 255});
+        DrawTriangle(tip, {tip.x + 36.0f, tip.y + 16.0f}, {tip.x + 12.0f, tip.y + 43.0f}, coreColor);
+        DrawTriangle(tip, {tip.x + 12.0f, tip.y + 43.0f}, {tip.x + 13.0f, tip.y + 17.0f}, ColorAlpha(accentColor, 0.9f));
+        DrawCircleV(guard, 13.0f, accentColor);
+    } else {
+        // Crooked staff with an elemental focus suspended in its head.
+        Vector2 head = {tip.x + 22.0f, tip.y + 24.0f};
+        DrawLineEx(guard, head, 16.0f, Color{71, 52, 45, 255});
+        DrawLineEx(head, {head.x - 18.0f, head.y - 27.0f}, 11.0f, Color{71, 52, 45, 255});
+        DrawLineEx(head, {head.x + 26.0f, head.y - 10.0f}, 11.0f, Color{71, 52, 45, 255});
+        DrawCircleV({head.x + 2.0f, head.y - 9.0f}, 18.0f, ColorAlpha(coreColor, 0.35f));
+        DrawPoly({head.x + 2.0f, head.y - 9.0f}, 6, 11.0f, 30.0f, coreColor);
+        DrawPolyLinesEx({head.x + 2.0f, head.y - 9.0f}, 6, 15.0f, 30.0f, 3.0f, accentColor);
+    }
+
+    std::string weaponName = std::string(ElementPrefix(core)) + " " + WeaponForm(form);
+    i32 textSize = 18;
+    i32 textX = GetScreenWidth() - MeasureText(weaponName.c_str(), textSize) - 18;
+    i32 textY = GetScreenHeight() - 190;
+    DrawText(weaponName.c_str(), textX + 2, textY + 2, textSize, Color{0, 0, 0, 180});
+    DrawText(weaponName.c_str(), textX, textY, textSize, accentColor);
 }
 }

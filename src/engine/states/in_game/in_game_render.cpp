@@ -166,6 +166,7 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         }
     });
 
+    DrawElementWeapon(game);
     DrawElementHexUi(game);
 
     if (game.paused) {
