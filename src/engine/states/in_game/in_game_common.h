@@ -61,5 +61,8 @@ namespace in_game {
     void StartUnpause(Game& game);
     glm::vec2 SmoothMouseMotion(Game& game, Vector2 raw_delta);
 
+    void UpdateElementHexUi(Game& game);
+    void DrawElementHexUi(const Game& game);
+
     bool ProjectEntityRect(const EntityComponent& entity, const Game& game, Rectangle& out_rect);
 }

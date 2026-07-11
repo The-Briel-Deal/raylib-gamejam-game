@@ -10,7 +10,13 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
     game.time += 1.0f;
     //game.nausea = 2.0f;
 
-    if (!game.pause_blocked_after_unpause && (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P))) {
+    UpdateElementHexUi(game);
+
+    if (game.arranging_hexes && IsKeyPressed(KEY_ESCAPE)) {
+        game.arranging_hexes = false;
+        game.dragged_hex = -1;
+        DisableCursor();
+    } else if (!game.pause_blocked_after_unpause && (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P))) {
         if (game.paused && game.unpause_delay_frames == 0) {
             StartUnpause(game);
         } else if (!game.paused) {
@@ -29,7 +35,7 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
         } else {
             game.cursor_hidden_after_unpause_frames = 0;
         }
-    } else if (!game.paused && !CursorCaptured()) {
+    } else if (!game.paused && !game.arranging_hexes && !CursorCaptured()) {
         StartPause(game);
     }
 
@@ -41,14 +47,14 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
             game.paused = false;
             game.pause_cursor_released = false;
         }
-    } else if (!game.paused) {
+    } else if (!game.paused && !game.arranging_hexes) {
         if (!CursorCaptured()) {
             DisableCursor();
         }
     }
 
     vec2 mouseMotion(0.0f);
-    if (game.paused || game.unpause_delay_frames > 0 || game.pause_blocked_after_unpause || !CursorCaptured()) {
+    if (game.paused || game.arranging_hexes || game.unpause_delay_frames > 0 || game.pause_blocked_after_unpause || !CursorCaptured()) {
         game.mouse_motion = vec2(0.0f);
     } else {
         mouseMotion = SmoothMouseMotion(game, GetMouseDelta());
@@ -69,7 +75,7 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
     const float MIX_VAL = 0.2f;
 
     info.flecs->each([&](EntityComponent& entity, PlayerComponent& player) {
-        if (game.paused) { // don't control player if paused
+        if (game.paused || game.arranging_hexes) { // don't control player while using a menu
             return;
         }
 

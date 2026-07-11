@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include <vector>
+#include <array>
 #include <raylib.h>
 #include "../../../utils/math_helpers.h"
 #include <unordered_map>
@@ -120,6 +121,12 @@ struct EntityVisibilityCheck {
     bool visible;
 };
 
+enum class ElementHex {
+    FIRE,
+    ICE,
+    WIND
+};
+
 struct Game {
     bool recolor_selected = false;
     int select_radius = 1;
@@ -139,6 +146,14 @@ struct Game {
     bool pause_blocked_after_unpause = false;
     i32 cursor_hidden_after_unpause_frames = 0;
     vec2 mouse_motion{};
+
+    std::array<ElementHex, 3> element_hexes{
+        ElementHex::FIRE, ElementHex::ICE, ElementHex::WIND
+    };
+    bool arranging_hexes = false;
+    i32 dragged_hex = -1;
+    vec2 dragged_hex_position{};
+    vec2 hex_drag_offset{};
 
     i32 select_x = -1;
     i32 select_z = -1;

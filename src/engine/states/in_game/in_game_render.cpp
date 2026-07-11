@@ -166,6 +166,8 @@ void InGameState::OnRender(CurrentGameInfo& info) {
         }
     });
 
+    DrawElementHexUi(game);
+
     if (game.paused) {
         auto mousePos = GetMousePosition();
 
