@@ -35,6 +35,14 @@ set(FLECS_SHARED OFF CACHE BOOL "Build shared flecs lib" FORCE)
 set(FLECS_STATIC ON CACHE BOOL "Build static flecs lib" FORCE)
 set(FLECS_TESTS OFF CACHE BOOL "Build flecs tests" FORCE)
 
+if (EMSCRIPTEN OR CMAKE_C_COMPILER MATCHES "emcc$")
+    add_compile_options(-pthread)
+    add_link_options(
+        -pthread
+        -sPTHREAD_POOL_SIZE=4
+    )
+endif()
+
 FetchContent_MakeAvailable(raylib)
 FetchContent_MakeAvailable(flecs)
 
@@ -63,6 +71,18 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 set_property(TARGET ${PROJECT_NAME} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
 if ("${PLATFORM}" STREQUAL "Web")
+
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+    target_link_options(${PROJECT_NAME} PRIVATE 
+        --pre-js ${CMAKE_SOURCE_DIR}/src/persistent-filesystem.js
+        -lidbfs.js
+
+        -sUSE_GLFW=3
+        -sSTACK_SIZE=1MB
+        -sINITIAL_MEMORY=64MB
+        --shell-file ${CMAKE_SOURCE_DIR}/src/minshell.html
+        --preload-file resources
+    )
     add_custom_command(
         TARGET ${PROJECT_NAME} PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/resources $<TARGET_FILE_DIR:${PROJECT_NAME}>/../resources

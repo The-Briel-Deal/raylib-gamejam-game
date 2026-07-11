@@ -129,6 +129,7 @@ struct Game {
     f32 gravity = -0.25f;
     f32 time = 0.0f;
     f32 nausea = 0.0f;
+    bool threads_loaded = false;
 
     std::unordered_map<i32, std::vector<EntityVisibilityCheck>> entity_buckets;
 

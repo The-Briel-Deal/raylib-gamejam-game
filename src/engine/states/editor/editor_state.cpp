@@ -9,7 +9,9 @@
 #include "../../current_game_info.h"
 #include <filesystem>
 #include <fstream>
-#include <ostream>
+#if defined(PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
 
 using namespace glm;
 
@@ -203,6 +205,23 @@ void LevelEditorState::OnRender(CurrentGameInfo& info) {
                     }
                 }
             }
+            edit_frame.SameLine();
+            if (edit_frame.DrawButton("Delete")) {
+                if (std::filesystem::remove(dir.path())) {
+                    #if defined(PLATFORM_WEB)
+                    EM_ASM({
+                        FS.syncfs(false, (error) => {
+                            if (error) {
+                                console.error("Failed to persist level:", error);
+                            } else {
+                                console.log("Level persisted to IndexedDB");
+                            }
+                        });
+                    });
+                    #endif
+                }
+            }
+            edit_frame.SetCursorPos({5, edit_frame.cursor_pos.y});
         }
         edit_frame.EndDrawing();
 
@@ -413,6 +432,19 @@ void LevelEditorState::OnRender(CurrentGameInfo& info) {
                     if (!stream) {
                         TraceLog(LOG_ERROR, "Failed while writing level data");
                     }
+
+                    stream.close();
+                    #if defined(PLATFORM_WEB)
+                    EM_ASM({
+                        FS.syncfs(false, (error) => {
+                            if (error) {
+                                console.error("Failed to persist level:", error);
+                            } else {
+                                console.log("Level persisted to IndexedDB");
+                            }
+                        });
+                    });
+                    #endif
                 }
             }
         }

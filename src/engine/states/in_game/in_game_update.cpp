@@ -8,7 +8,7 @@ using namespace in_game;
 void InGameState::OnUpdate(CurrentGameInfo& info) {
     auto& level = game.level;
     game.time += 1.0f;
-    game.nausea = 2.0f;
+    //game.nausea = 2.0f;
 
     if (!game.pause_blocked_after_unpause && (IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_P))) {
         if (game.paused && game.unpause_delay_frames == 0) {

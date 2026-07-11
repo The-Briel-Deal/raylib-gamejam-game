@@ -201,4 +201,6 @@ void InGameState::OnRender(CurrentGameInfo& info) {
 
         menu_frame.EndDrawing();
     }
+
+    DrawFPS(10, 10);
 }
