@@ -1,6 +1,7 @@
 #include "engine/rendering/render_system.h"
 #include "engine/states/game_state_controller.h"
 #include "engine/current_game_info.h"
+#include "raylib.h"
 
 
 #include <flecs.h>
@@ -22,11 +23,18 @@ static std::unique_ptr<RenderSystem> renderSystem{};
 static std::unique_ptr<GameStateController> stateController{};
 
 void MainLoop() {
+    gameInfo.frame_delta = clamp(GetFrameTime(), 1.0f / 60.0f, 1.0f);
     gameInfo.renderSystem->BeginFrame();
     gameInfo.frameCounter = gameInfo.renderSystem->frameCounter;
     gameInfo.gameStateController->OnUpdate(gameInfo);
     gameInfo.gameStateController->OnRender(gameInfo);
     gameInfo.renderSystem->EndFrame();
+}
+
+void LoadTextures() {
+    gameInfo.grungle_title_screen[0] = LoadTexture("resources/grungle_title_screen.png");
+    gameInfo.grungle_title_screen[1] = LoadTexture("resources/grungle_title_screen2.png");
+    gameInfo.eye_beams = LoadTexture("resources/eye_beams.png");
 }
 
 int main(void) {
@@ -36,6 +44,9 @@ int main(void) {
     gameInfo.renderSystem = renderSystem.get();
     
     stateController = std::make_unique<GameStateController>(gameInfo);
+
+    LoadTextures();
+    
 
     #if defined(PLATFORM_WEB)
         emscripten_set_main_loop(MainLoop, 60, 1);

@@ -62,6 +62,12 @@ endif()
 add_executable(${PROJECT_NAME})
 add_subdirectory(src)
 
+# Resource changes must rerun Emscripten's preload packaging/link step.
+file(GLOB_RECURSE PROJECT_RESOURCE_FILES CONFIGURE_DEPENDS
+    "${CMAKE_SOURCE_DIR}/src/resources/*")
+set_property(TARGET ${PROJECT_NAME} APPEND PROPERTY LINK_DEPENDS
+    ${PROJECT_RESOURCE_FILES})
+
 target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 add_subdirectory(include/glm)
 
@@ -81,35 +87,31 @@ if ("${PLATFORM}" STREQUAL "Web")
         -sSTACK_SIZE=1MB
         -sINITIAL_MEMORY=64MB
         --shell-file ${CMAKE_SOURCE_DIR}/src/minshell.html
-        --preload-file resources
+        "SHELL:--preload-file ${CMAKE_BINARY_DIR}/resources@/resources"
     )
-    add_custom_command(
-        TARGET ${PROJECT_NAME} PRE_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/resources $<TARGET_FILE_DIR:${PROJECT_NAME}>/../resources
+    add_custom_target(copy_resources ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/src/resources"
+            "${CMAKE_BINARY_DIR}/resources"
+        COMMENT "Copying resources"
     )
+
+    add_dependencies(${PROJECT_NAME} copy_resources)
     #DEPENDS ${PROJECT_NAME}
 else()
-    add_custom_command(
-        TARGET ${PROJECT_NAME} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/src/resources $<TARGET_FILE_DIR:${PROJECT_NAME}>/resources
+    add_custom_target(copy_resources ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            "${CMAKE_SOURCE_DIR}/src/resources"
+            "${CMAKE_BINARY_DIR}/resources"
+        COMMENT "Copying resources"
     )
+
+    add_dependencies(${PROJECT_NAME} copy_resources)
     #DEPENDS ${PROJECT_NAME}
 endif()
 
 #set(raylib_VERBOSE 1)
 target_link_libraries(${PROJECT_NAME} raylib ${FLECS_TARGET})
-
-# Web Configurations
-if ("${PLATFORM}" STREQUAL "Web")
-    # Tell Emscripten to build an example.html file.
-    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
-    target_link_options(${PROJECT_NAME} PUBLIC
-        -sUSE_GLFW=3
-        -sSTACK_SIZE=1MB
-        -sINITIAL_MEMORY=64MB
-        --shell-file ${CMAKE_SOURCE_DIR}/src/minshell.html
-        --preload-file resources)
-endif()
 
 # Checks if OSX and links appropriate frameworks (Only required on MacOS)
 if (APPLE)

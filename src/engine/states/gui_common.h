@@ -115,9 +115,11 @@ struct TextureButtonInfo : GuiInfo {
 struct TextureInfo : GuiInfo {
     Texture2D texture{};
     Rectangle sourceRect{};
+    f32vec2 origin{};
+    f32 rotation;
 
     void Draw(GuiStyle& style) override {
-        DrawTexturePro(texture, sourceRect, {pos.x, pos.y, size.x, size.y}, {}, 0, style.image_tint);
+        DrawTexturePro(texture, sourceRect, {pos.x, pos.y, size.x, size.y}, {origin.x, origin.y}, rotation, style.image_tint);
     }
 
     ComponentType GetType() override {
@@ -403,7 +405,7 @@ struct GuiFrame {
         return info->hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
     }
 
-    void DrawImage(Texture2D image, f32vec2 size = {}, Rectangle source = {}) {
+    void DrawImage(Texture2D image, f32vec2 size = {}, Rectangle source = {}, f32vec2 origin = {}, f32 rotation = 0) {
         auto& style = GetCurrentStyle();
         auto info = std::make_shared<TextureInfo>();
         auto label = currentLabel + std::to_string(component_count);
@@ -419,6 +421,8 @@ struct GuiFrame {
             source = {0, 0, (f32)image.width, (f32)image.height};
         }
 
+        info->origin = origin;
+        info->rotation = rotation;
         info->size = size;
         info->sourceRect = source;
 
