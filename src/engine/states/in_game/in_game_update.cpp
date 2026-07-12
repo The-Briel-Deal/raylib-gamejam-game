@@ -155,6 +155,9 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
             break;
         case SkeletonState::FOUND:
             visible.texture = info.skeletonInfo.shock;
+            skeleton.is_holding = false;
+            skeleton.held = false;
+            skeleton.reload_timer = 0;
             if (skeleton.timer > 3) {
                 skeleton.state = SkeletonState::CHASING;
             }
@@ -185,7 +188,7 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
                     });
                 }
 
-                if (closest_skele <= 10 && skeleton.is_holding == false && skeleton.held == false) {
+                if (closest_skele <= 10) {
                     int frame = (int)(skeleton.timer * 4) % 6;
                     visible.texture = info.skeletonInfo.running[frame];
                     vec3 move = glm::normalize(mainPlayer.pos - sk_e.pos);
@@ -203,7 +206,7 @@ void InGameState::OnUpdate(CurrentGameInfo& info) {
                 } else {
                     float dist = glm::distance(mainPlayer.pos, entity.pos);
                     if (dist <= 8) {
-                        if (skeleton.reload_timer <= 0 && skeleton.holding == false) {
+                        if (skeleton.reload_timer <= 0) {
                             skeleton.state = SkeletonState::EQUIP_PISTOL;
                             skeleton.timer = 0;
                         } else {
