@@ -3511,21 +3511,6 @@ CMakeFiles/raylib-game-template.dir/src/engine/states/in_game/in_game_update.cpp
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/matrix_float4x3_precision.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/matrix_float4x4.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/matrix_float4x4_precision.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/common.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_vector_relational.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/vector_relational.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/_fixes.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/_vectorize.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/compute_common.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_common.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_exponential.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec1.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec1.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/exponential.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_geometric.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/geometric.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_matrix.inl \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/mat2x3.hpp \
@@ -3537,17 +3522,9 @@ CMakeFiles/raylib-game-template.dir/src/engine/states/in_game/in_game_update.cpp
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/mat4x3.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/mat4x4.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/matrix.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/compute_vector_relational.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_mat2x2.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_mat2x2.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec2.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec2.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec3.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec3.inl \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec4.hpp \
-  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec4.inl \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/scalar_int_sized.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/scalar_uint_sized.hpp \
@@ -3585,8 +3562,27 @@ CMakeFiles/raylib-game-template.dir/src/engine/states/in_game/in_game_update.cpp
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/vector_uint3_sized.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/vector_uint4.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/ext/vector_uint4_sized.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/common.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_vector_relational.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/vector_relational.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/_fixes.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/_vectorize.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/compute_common.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_common.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_exponential.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec1.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec1.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec2.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec2.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec4.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec4.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/exponential.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/simd/platform.h \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/_fixes.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/compute_vector_relational.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_geometric.inl \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_integer.inl \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_packing.inl \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/func_trigonometric.inl \
@@ -3594,7 +3590,10 @@ CMakeFiles/raylib-game-template.dir/src/engine/states/in_game/in_game_update.cpp
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/setup.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_half.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_half.inl \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec3.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/detail/type_vec3.inl \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/fwd.hpp \
+  /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/geometric.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/glm.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/integer.hpp \
   /home/kevin-james/Documents/GitHub/raylib-gamejam-game/include/glm/mat2x2.hpp \

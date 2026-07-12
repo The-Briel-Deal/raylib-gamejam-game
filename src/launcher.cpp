@@ -43,6 +43,8 @@ void LoadTextures() {
     gameInfo.grungle_icons[3] = gameInfo.grungle_icons[1];
 
     gameInfo.hotbar = LoadTexture("resources/grungle_hotbar.png");
+
+    gameInfo.skeletonInfo.Load();
 }
 
 int main(void) {

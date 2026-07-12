@@ -38,10 +38,11 @@ void InGameState::OnLoad(CurrentGameInfo& info) {
     auto testComp = EntityComponent{};
     testComp.pos = playerComp.pos;
 
-    info.flecs->entity("Test").set<EntityComponent>(testComp).set<VisibleEntityComponent>(VisibleEntityComponent{
-        .texture = LoadTexture("resources/apple.png"),
-        .has_texture = true
-    });
+    info.flecs->entity("Test").set<EntityComponent>(testComp).set<VisibleEntityComponent>(VisibleEntityComponent{}).set<SkeletonComponent>({});
+    
+    testComp.pos.x += 4;
+    info.flecs->entity("Test2").set<EntityComponent>(testComp).set<VisibleEntityComponent>(VisibleEntityComponent{}).set<SkeletonComponent>({});
+
 }
 
 void InGameState::OnUnload(CurrentGameInfo& info) {

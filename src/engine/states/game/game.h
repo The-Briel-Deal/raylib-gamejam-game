@@ -104,6 +104,20 @@ struct PlayerComponent {
     bool placeholder = false;
 };
 
+enum class SkeletonState {
+    IDLE, SEARCHING, FOUND, CHASING, SITTING, CARRYING_IDLE, CARRYING_CHASING, THROWING, FLYING, EQUIP_PISTOL, SHOOT, AIM
+};
+
+struct SkeletonComponent {
+    float reload_timer = 0;
+    float timer = 0;
+    bool held = false;
+    flecs::entity holding;
+    bool is_holding = false;
+    SkeletonState state = SkeletonState::IDLE;
+    glm::vec2 fly_vec{};
+};
+
 struct VisibleEntityComponent {
     f32vec3 color{1, 1, 1};
     bool visible;
